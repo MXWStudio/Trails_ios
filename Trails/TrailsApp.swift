@@ -22,8 +22,8 @@ struct TrailsApp: App {
         WindowGroup {
             // 根据登录状态决定显示哪个视图
             if authViewModel.isUserAuthenticated {
-                // 如果用户已登录，显示底部导航栏视图
-                BottomTabView()
+                // 如果用户已登录，显示主导航视图 (默认显示今日目标页面)
+                MainNavigationView()
                     .environmentObject(authViewModel)
                     .environmentObject(motionManager) // 注入运动管理器到环境中
                     .environmentObject(userDataViewModel) // 注入到环境中

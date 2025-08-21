@@ -27,19 +27,44 @@ struct TodayGoalView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 30) {
-                // ... (与之前版本类似，UI未大改)
-                Text("设定你的今日目标").font(.largeTitle).fontWeight(.bold)
+                // 欢迎标题
+                Text("设定你的今日目标")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .padding(.top)
+                
+                // 运动强度选择器
                 Picker("运动强度", selection: $dailyGoal.intensity) {
-                    ForEach(Intensity.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                }.pickerStyle(SegmentedPickerStyle())
+                    ForEach(Intensity.allCases, id: \.self) { intensity in
+                        Text(intensity.rawValue).tag(intensity)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding(.horizontal)
+                
+                // 目标信息显示
                 VStack(alignment: .leading, spacing: 15) {
                     Label("时长: \(dailyGoal.durationMinutes) 分钟", systemImage: "timer")
                     Label("卡路里: \(dailyGoal.caloriesBurned) 大卡", systemImage: "flame.fill")
                     Label("经验奖励: \(dailyGoal.xpReward) XP", systemImage: "sparkles")
-                }.padding().background(Color.gray.opacity(0.1)).cornerRadius(12)
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(12)
+                .padding(.horizontal)
+                
                 Spacer()
-                Button("开始运动") { showActivityView = true }
-                    .buttonStyle(PrimaryButtonStyle())
+                
+                // 开始运动按钮
+                Button("开始运动") { 
+                    showActivityView = true 
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .padding(.horizontal)
+                
+                // 为底部导航栏预留空间
+                Color.clear
+                    .frame(height: 80)
             }
             .padding().navigationTitle("今日目标")
             .fullScreenCover(isPresented: $showActivityView) {

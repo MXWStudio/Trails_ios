@@ -22,7 +22,7 @@ import SwiftUI
 struct CommunityView: View {
     var body: some View {
         NavigationView {
-            VStack {
+            VStack(spacing: 20) {
                 Spacer()
                 
                 // 主图标
@@ -43,9 +43,33 @@ struct CommunityView: View {
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                 
+                // 功能按钮
+                VStack(spacing: 15) {
+                    Button("浏览动态") {
+                        // TODO: 实现浏览动态功能
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    
+                    Button("发布运动成果") {
+                        // TODO: 实现发布功能
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    
+                    Button("寻找运动伙伴") {
+                        // TODO: 实现寻找伙伴功能
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                }
+                .padding()
+                
                 Spacer()
+                
+                // 为底部导航栏预留空间
+                Color.clear
+                    .frame(height: 60)
             }
             .navigationTitle("社区")
+            .navigationBarTitleDisplayMode(.large)
         }
     }
 }

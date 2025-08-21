@@ -71,6 +71,11 @@ struct ProfileView: View {
                     
                     // 个人数据编辑按钮
                     Button("编辑个人资料") { isEditingProfile = true }
+                        .padding(.horizontal)
+                    
+                    // 为底部导航栏预留空间
+                    Color.clear
+                        .frame(height: 80)
                 }
             }
             .navigationTitle("个人资料")

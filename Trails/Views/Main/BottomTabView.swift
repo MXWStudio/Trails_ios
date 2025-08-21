@@ -7,62 +7,96 @@
 
 import SwiftUI
 
-/// 底部标签页导航视图 - 应用的核心导航容器
+/// 可重用的底部导航栏组件
 /// 
-/// 这个视图是用户登录后看到的主界面，包含四个核心功能模块：
-/// - 探索: 发现精彩路线和目的地
+/// 这个组件提供四个核心功能模块的快速导航：
+/// - 今日目标: 运动目标设定和追踪
 /// - 社区: 与其他旅行者交流分享  
-/// - 收藏: 保存喜欢的路线和地点
+/// - 成就: 查看运动成就和奖励
 /// - 个人: 用户信息管理和设置
 /// 
-/// 架构特点：
-/// - 使用 TabView 提供原生的标签页导航体验
-/// - 每个标签页对应一个独立的视图文件，便于维护
-/// - 采用模块化设计，各功能相对独立
+/// 使用方法：
+/// - 通过 selectedTab 绑定当前选中的标签页
+/// - 通过 onTabChanged 回调处理标签页切换
 /// 
-/// 依赖的视图文件：
-/// - ExploreView.swift: 探索功能模块
-/// - CommunityView.swift: 社区功能模块  
-/// - FavoritesView.swift: 收藏功能模块
-/// - ProfileView.swift: 个人资料模块
-struct BottomTabView: View {
-    var body: some View {
-        TabView {
-            // 第一个 Tab: 今日目标 (运动规划)
-            TodayGoalView()
-                .tabItem {
-                    Image(systemName: "flag.checkered")
-                    Text("今日目标")
-                }
-
-            // 第二个 Tab: 社区
-            CommunityView()
-                .tabItem {
-                    Image(systemName: "person.3.fill")
-                    Text("社区")
-                }
-
-            // 第三个 Tab: 成就
-            FavoritesView()
-                .tabItem {
-                    Image(systemName: "star.fill")
-                    Text("成就")
-                }
-
-            // 第四个 Tab: 个人
-            ProfileView()
-                .tabItem {
-                    Image(systemName: "person.fill")
-                    Text("个人")
-                }
+/// 设计特点：
+/// - 可重用的模块化设计
+/// - 统一的UI风格和交互体验
+/// - 支持高亮显示当前页面
+enum TabItem: Int, CaseIterable {
+    case todayGoal = 0
+    case community = 1
+    case achievements = 2
+    case profile = 3
+    
+    var title: String {
+        switch self {
+        case .todayGoal: return "今日目标"
+        case .community: return "社区"
+        case .achievements: return "成就"
+        case .profile: return "个人"
         }
+    }
+    
+    var iconName: String {
+        switch self {
+        case .todayGoal: return "flag.checkered"
+        case .community: return "person.3.fill"
+        case .achievements: return "star.fill"
+        case .profile: return "person.fill"
+        }
+    }
+}
+
+struct BottomTabView: View {
+    @Binding var selectedTab: TabItem
+    let onTabChanged: (TabItem) -> Void
+    
+    var body: some View {
+        HStack {
+            ForEach(TabItem.allCases, id: \.self) { tab in
+                Button(action: {
+                    selectedTab = tab
+                    onTabChanged(tab)
+                }) {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.iconName)
+                            .font(.system(size: 20))
+                            .foregroundColor(selectedTab == tab ? .blue : .gray)
+                        
+                        Text(tab.title)
+                            .font(.caption)
+                            .foregroundColor(selectedTab == tab ? .blue : .gray)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.vertical, 8)
+        .background(Color(.systemBackground))
+        .overlay(
+            Rectangle()
+                .frame(height: 0.5)
+                .foregroundColor(Color(.separator)),
+            alignment: .top
+        )
     }
 }
 
 // MARK: - 预览
 struct BottomTabView_Previews: PreviewProvider {
     static var previews: some View {
-        BottomTabView()
-            .environmentObject(AuthenticationViewModel())
+        VStack {
+            Spacer()
+            Text("页面内容区域")
+                .font(.largeTitle)
+                .foregroundColor(.gray)
+            Spacer()
+            
+            BottomTabView(selectedTab: .constant(.todayGoal)) { selectedTab in
+                print("切换到: \(selectedTab.title)")
+            }
+        }
+        .environmentObject(AuthenticationViewModel())
     }
 }

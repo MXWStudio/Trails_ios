@@ -70,6 +70,11 @@ struct AchievementsView: View {
             }
             .navigationTitle("成就")
             .navigationBarTitleDisplayMode(.large)
+            .safeAreaInset(edge: .bottom) {
+                // 为底部导航栏预留空间
+                Color.clear
+                    .frame(height: 60)
+            }
         }
     }
 }

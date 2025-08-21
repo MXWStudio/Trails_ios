@@ -21,10 +21,11 @@ Trails/
 ├── Views/                             # 视图层
 │   ├── Authentication/                # 认证相关视图
 │   │   └── LoginView.swift           # 登录页面
-│   ├── Main/                         # 主要视图
-│   │   └── BottomTabView.swift       # 底部导航
+│   ├── Main/                         # 主要视图和导航
+│   │   ├── MainNavigationView.swift  # 🆕 主导航容器
+│   │   └── BottomTabView.swift       # 🔄 重构底部导航组件
 │   ├── Tabs/                         # 标签页视图
-│   │   ├── TodayGoalView.swift       # 今日目标页面
+│   │   ├── TodayGoalView.swift       # 🏠 今日目标页面 (主页)
 │   │   ├── CommunityView.swift       # 社区页面
 │   │   ├── FavoritesView.swift       # 成就页面
 │   │   ├── ActivityView.swift        # 运动追踪页面
@@ -94,7 +95,7 @@ Trails/
 **真机**: 使用真实 Apple ID 登录  
 **模拟器**: 点击"跳过登录"按钮
 
-## 📂 跳转路径
+## 📂 应用导航结构
 
 ### 应用流程
 ```
@@ -102,12 +103,21 @@ TrailsApp.swift
     ↓
 LoginView.swift (未登录)
     ↓
-BottomTabView.swift (已登录)
+MainNavigationView.swift (已登录，主导航容器)
     ↓
 [TodayGoalView | CommunityView | FavoritesView | ProfileView]
+    ↓  
+BottomTabView.swift (底部导航栏组件)
     ↓
 ActivityView (从TodayGoalView启动)
 ```
+
+### 导航架构更新 🆕
+- **TodayGoalView**: 默认主页面，用户登录后直接显示
+- **MainNavigationView**: 新增主导航容器，管理页面切换
+- **BottomTabView**: 重构为可重用的底部导航栏组件
+- **统一底部导航**: 每个页面都集成了底部导航栏
+- **页面切换**: 支持在今日目标、社区、成就、个人页面间无缝切换
 
 ### 文件关联
 - `AuthenticationViewModel.swift` ← 管理登录状态
