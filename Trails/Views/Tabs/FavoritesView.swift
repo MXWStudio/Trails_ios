@@ -22,13 +22,13 @@ import SwiftUI
 /// - 黄色星星主题，突出成就感
 struct AchievementsView: View {
     @State private var achievements: [Achievement] = [
-        Achievement(title: "初次上路", description: "完成你的第一次运动", isUnlocked: true),
-        Achievement(title: "晨鸟", description: "在早上 8 点前完成一次运动", isUnlocked: false),
-        Achievement(title: "持之以恒", description: "连续 7 天完成运动", isUnlocked: false),
-        Achievement(title: "十公里俱乐部", description: "单次跑步或徒步超过 10 公里", isUnlocked: false),
-        Achievement(title: "卡路里杀手", description: "单次运动消耗超过 500 大卡", isUnlocked: false),
-        Achievement(title: "速度之星", description: "平均配速达到 5 分钟/公里", isUnlocked: false),
-        Achievement(title: "马拉松勇士", description: "完成 42.195 公里的马拉松挑战", isUnlocked: false)
+        Achievement(title: "初次上路", description: "完成你的第一次运动", icon: "star.fill", isUnlocked: true, category: .special),
+        Achievement(title: "晨鸟", description: "在早上 8 点前完成一次运动", icon: "sunrise.fill", isUnlocked: false, category: .time),
+        Achievement(title: "持之以恒", description: "连续 7 天完成运动", icon: "flame.fill", isUnlocked: false, category: .streak),
+        Achievement(title: "十公里俱乐部", description: "单次跑步或徒步超过 10 公里", icon: "figure.run", isUnlocked: false, category: .distance),
+        Achievement(title: "卡路里杀手", description: "单次运动消耗超过 500 大卡", icon: "bolt.fill", isUnlocked: false, category: .calories),
+        Achievement(title: "速度之星", description: "平均配速达到 5 分钟/公里", icon: "speedometer", isUnlocked: false, category: .special),
+        Achievement(title: "马拉松勇士", description: "完成 42.195 公里的马拉松挑战", icon: "medal.fill", isUnlocked: false, category: .distance)
     ]
 
     var body: some View {
@@ -36,7 +36,7 @@ struct AchievementsView: View {
             List(achievements, id: \.id) { achievement in
                 HStack(spacing: 15) {
                     // 成就图标
-                    Image(systemName: achievement.isUnlocked ? "star.fill" : "star")
+                    Image(systemName: achievement.isUnlocked ? achievement.icon : "lock.fill")
                         .foregroundColor(achievement.isUnlocked ? .yellow : .gray)
                         .font(.largeTitle)
                     

@@ -24,109 +24,45 @@ import MapKit
 struct ActivityView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var motionManager: MotionManager
+    @EnvironmentObject var userData: UserDataViewModel
     let goal: DailyGoal
     
     @State private var showReward = false
+    @State private var showSummary = false
 
     var body: some View {
         ZStack {
-            // 背景地图显示当前位置
-            Map()
-                .ignoresSafeArea()
-
+            Map().ignoresSafeArea()
             VStack {
                 Spacer()
-                
-                // 实时数据显示面板
-                VStack(spacing: 20) {
-                    // 运动时间 - 大字体显示
-                    Text(formatDuration(motionManager.durationSeconds))
-                        .font(.system(size: 80, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    
-                    // 距离和卡路里数据
-                    HStack(spacing: 40) {
-                        VStack {
-                            Text(String(format: "%.2f", motionManager.distanceMeters / 1000))
-                                .font(.title)
-                                .fontWeight(.bold)
-                                .foregroundColor(.blue)
-                            Text("公里")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        VStack {
-                            Text(String(format: "%.0f", motionManager.caloriesBurned))
-                                .font(.title)
-                                .fontWeight(.bold)
-                                .foregroundColor(.orange)
-                            Text("大卡")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
-                    // 目标进度指示
-                    if motionManager.durationSeconds >= Double(goal.durationMinutes * 60) {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
-                            Text("已达成目标时长！")
-                                .font(.headline)
-                                .foregroundColor(.green)
-                        }
-                        .padding(.top, 10)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
-                .padding()
-
+                ActivityDataPanel(motionManager: motionManager)
                 Spacer()
-                
-                // 结束运动按钮
                 Button(action: {
                     motionManager.stopTracking()
-                    showReward = true
+                    // 增加经验值
+                    userData.addXP(goal.xpReward)
+                    // 检查任务进度
+                    userData.checkDistanceQuest(distanceKm: motionManager.distanceMeters / 1000)
+                    userData.checkCaloriesQuest(calories: motionManager.caloriesBurned)
+                    // 显示总结页面
+                    showSummary = true
                 }) {
-                    VStack {
-                        Image(systemName: "stop.fill")
-                            .font(.title)
-                        Text("结束运动")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                    }
-                    .foregroundColor(.white)
-                    .frame(width: 150, height: 150)
-                    .background(Color.red)
-                    .clipShape(Circle())
-                    .shadow(color: .red.opacity(0.4), radius: 15, x: 0, y: 5)
+                    Text("结束运动").font(.title2).fontWeight(.bold).foregroundColor(.white)
+                        .padding().frame(width: 150, height: 150)
+                        .background(Color.red).clipShape(Circle()).shadow(radius: 10)
                 }
                 .padding(.bottom, 40)
             }
         }
         .onAppear {
             motionManager.resetData()
-            motionManager.startTracking()
+            motionManager.startTracking(user: userData.user)
         }
-        .alert(isPresented: $showReward) {
-            Alert(
-                title: Text("🎉 运动完成！"),
-                message: Text("恭喜你完成了今日运动！\n获得了 100 金币和 50 XP！"),
-                dismissButton: .default(Text("太棒了！"), action: {
-                    presentationMode.wrappedValue.dismiss()
-                })
-            )
+        .sheet(isPresented: $showSummary) {
+            ActivitySummaryView(goal: goal, motionManager: motionManager) {
+                presentationMode.wrappedValue.dismiss()
+            }
         }
-    }
-    
-    /// 格式化运动时长为 MM:SS 格式
-    private func formatDuration(_ seconds: TimeInterval) -> String {
-        let minutes = Int(seconds) / 60
-        let remainingSeconds = Int(seconds) % 60
-        return String(format: "%02d:%02d", minutes, remainingSeconds)
     }
 }
 

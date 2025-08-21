@@ -24,58 +24,63 @@ import SwiftUI
 /// - 需要 AuthenticationViewModel 来管理用户状态
 /// - 使用 @EnvironmentObject 接收认证状态
 struct ProfileView: View {
-    @EnvironmentObject var authViewModel: AuthenticationViewModel
+    @EnvironmentObject var userDataVM: UserDataViewModel
+    @State private var isEditingProfile = false
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                Spacer()
-                
-                // 用户头像
-                Image(systemName: "person.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(.blue)
-                    .padding()
-                
-                // 用户信息部分
-                VStack(spacing: 8) {
-                    // 用户姓名
-                    Text(authViewModel.userName ?? "用户")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    
-                    // 用户邮箱
-                    Text(authViewModel.userEmail ?? "")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .padding()
-                
-                Spacer()
-                
-                // 退出登录按钮
-                Button(action: {
-                    authViewModel.signOut()
-                }) {
-                    HStack {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                        Text("退出登录")
+            ScrollView {
+                VStack(spacing: 20) {
+                    // 顶部蓝色背景部分
+                    VStack {
+                        Image(systemName: "person.crop.circle.fill") // 头像占位符
+                            .font(.system(size: 80))
+                            .foregroundColor(.white)
+                        Text(userDataVM.user.name).font(.title).bold().foregroundColor(.white)
+                        Text("@username · \(userDataVM.user.joinYear) 年加入").foregroundColor(.white.opacity(0.8))
                     }
-                    .font(.headline)
-                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.red)
-                    .cornerRadius(12)
+                    .background(Color.blue)
+                    
+                    // 关注/关注者
+                    HStack {
+                        VStack { Text("\(userDataVM.user.followers)").bold(); Text("关注") }
+                        Spacer()
+                        VStack { Text("\(userDataVM.user.following)").bold(); Text("关注者") }
+                        Spacer()
+                        Button("+ 添加好友") {}
+                    }
+                    .padding(.horizontal)
+                    
+                    // 概览
+                    VStack(alignment: .leading) {
+                        Text("概览").font(.headline).padding(.horizontal)
+                        HStack {
+                            StatCard(value: "\(userDataVM.user.streakDays)", name: "打卡天数", icon: "flame.fill", color: .orange)
+                            StatCard(value: "\(userDataVM.user.totalXP)", name: "经验", icon: "sparkle", color: .yellow)
+                            StatCard(value: userDataVM.user.league, name: "段位", icon: "shield.fill", color: .red)
+                        }
+                    }.padding(.horizontal)
+                    
+                    // 成就
+                    VStack(alignment: .leading) {
+                        Text("成就").font(.headline).padding(.horizontal)
+                        // ... 成就徽章的横向滚动视图 ...
+                    }
+                    
+                    // 个人数据编辑按钮
+                    Button("编辑个人资料") { isEditingProfile = true }
                 }
-                .padding(.horizontal, 40)
-                .padding(.bottom, 40)
             }
-            .navigationTitle("个人")
+            .navigationTitle("个人资料")
+            .navigationBarHidden(true)
+            .sheet(isPresented: $isEditingProfile) {
+                EditProfileView()
+            }
         }
     }
 }
-
 // MARK: - 预览
 struct ProfileView_Previews: PreviewProvider {
     static var previews: some View {

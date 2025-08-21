@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import AuthenticationServices
+import MapKit
 
 @main
 struct TrailsApp: App {
@@ -13,6 +15,8 @@ struct TrailsApp: App {
     @StateObject private var authViewModel = AuthenticationViewModel()
     // 添加运动数据管理器
     @StateObject private var motionManager = MotionManager()
+    // 添加一个全局的用户数据管理器
+    @StateObject private var userDataViewModel = UserDataViewModel()
 
     var body: some Scene {
         WindowGroup {
@@ -22,6 +26,7 @@ struct TrailsApp: App {
                 BottomTabView()
                     .environmentObject(authViewModel)
                     .environmentObject(motionManager) // 注入运动管理器到环境中
+                    .environmentObject(userDataViewModel) // 注入到环境中
             } else {
                 // 如果用户未登录，显示登录页
                 LoginView()

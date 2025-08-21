@@ -25,14 +25,15 @@ class MotionManager: ObservableObject {
     
     private var timer: Timer?
 
-    /// 开始运动追踪
-    func startTracking() {
+   // 未来的精确计算将在这里进行
+    func startTracking(user: UserData) {
         isTracking = true
-        // 模拟数据增长 - 在实际应用中这里会连接 HealthKit 或 Core Motion
+        // 模拟数据增长 (未来将替换为 HealthKit 或 GPS 数据)
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             self.durationSeconds += 1
-            self.caloriesBurned += 0.1 // 简化模拟：每秒消耗0.1卡路里
-            self.distanceMeters += 1.5 // 简化模拟：每秒移动1.5米
+            // 简单模拟卡路里燃烧，实际应使用公式: METs * weight * time
+            self.caloriesBurned += 0.1 * (user.weightKG / 75.0)
+            self.distanceMeters += 1.5
         }
     }
 
@@ -43,7 +44,6 @@ class MotionManager: ObservableObject {
         timer = nil
     }
     
-    /// 重置所有运动数据
     func resetData() {
         durationSeconds = 0
         caloriesBurned = 0

@@ -7,29 +7,11 @@
 
 import Foundation
 
-// MARK: - 运动目标模型
+// MARK: - 核心模型
+// 注意：大部分模型已经迁移到单独的文件中以提高可维护性
+// - DailyGoal.swift: 每日目标相关模型
+// - Achievement.swift: 成就系统模型  
+// - UserData.swift: 用户数据模型
+// - DailyQuest.swift: 每日任务模型
 
-/// 用户每日运动目标设定
-struct DailyGoal {
-    var intensity: Intensity = .moderate
-    var durationMinutes: Int = 30
-    var caloriesBurned: Int = 200
-}
-
-/// 运动强度等级
-enum Intensity: String, CaseIterable {
-    case beginner = "新手"
-    case moderate = "适中"
-    case advanced = "进阶"
-    case professional = "专业"
-}
-
-// MARK: - 成就系统模型
-
-/// 用户成就模型
-struct Achievement {
-    let id = UUID()
-    let title: String
-    let description: String
-    var isUnlocked: Bool
-}
+// 这里可以放置一些通用的枚举或结构体

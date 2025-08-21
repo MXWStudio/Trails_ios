@@ -29,7 +29,7 @@ struct BottomTabView: View {
     var body: some View {
         TabView {
             // 第一个 Tab: 今日目标 (运动规划)
-            ExploreView()
+            TodayGoalView()
                 .tabItem {
                     Image(systemName: "flag.checkered")
                     Text("今日目标")
