@@ -1,54 +1,55 @@
 import SwiftUI
 
 struct EditProfileView: View {
-    @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var userDataVM: UserDataViewModel
+    @Environment(\.presentationMode) var presentationMode
     
-    @State private var tempName: String = ""
-    @State private var tempWeight: String = ""
-    @State private var tempHeight: String = ""
-    
+    @State private var height: Double = 180.0
+    @State private var weight: Double = 75.0
+    @State private var preferredIntensity: Intensity = .moderate
+
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("基本信息")) {
-                    TextField("姓名", text: $tempName)
-                    TextField("体重 (kg)", text: $tempWeight)
-                        .keyboardType(.decimalPad)
-                    TextField("身高 (cm)", text: $tempHeight)
-                        .keyboardType(.decimalPad)
+                Section(header: Text("身体数据")) {
+                    Stepper("身高: \(height, specifier: "%.0f") cm", value: $height, in: 100...250)
+                    Stepper("体重: \(weight, specifier: "%.1f") kg", value: $weight, in: 30...200, step: 0.5)
                 }
                 
+                // 新增：默认运动强度选择
                 Section(header: Text("运动偏好")) {
-                    // 可以添加运动偏好设置
+                    Picker("默认运动强度", selection: $preferredIntensity) {
+                        ForEach(Intensity.allCases) { intensity in
+                            Text(intensity.rawValue).tag(intensity)
+                        }
+                    }
                 }
             }
-            .navigationTitle("编辑资料")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("编辑个人资料")
+            .onAppear {
+                // 视图出现时，从 ViewModel 加载当前数据到 @State 变量
+                self.height = userDataVM.user.heightCM
+                self.weight = userDataVM.user.weightKG
+                self.preferredIntensity = userDataVM.user.preferredIntensity
+            }
             .navigationBarItems(
-                leading: Button("取消") {
-                    presentationMode.wrappedValue.dismiss()
-                },
+                leading: Button("取消") { presentationMode.wrappedValue.dismiss() },
                 trailing: Button("保存") {
-                    saveChanges()
+                    // 保存数据回 ViewModel
+                    userDataVM.user.heightCM = height
+                    userDataVM.user.weightKG = weight
+                    userDataVM.user.preferredIntensity = preferredIntensity
                     presentationMode.wrappedValue.dismiss()
                 }
             )
         }
-        .onAppear {
-            tempName = userDataVM.user.name
-            tempWeight = String(userDataVM.user.weightKG)
-            tempHeight = String(userDataVM.user.heightCM)
-        }
     }
-    
-    private func saveChanges() {
-        userDataVM.user.name = tempName
-        if let weight = Double(tempWeight) {
-            userDataVM.user.weightKG = weight
-        }
-        if let height = Double(tempHeight) {
-            userDataVM.user.heightCM = height
-        }
+}
+
+// MARK: - 预览
+struct EditProfileView_Previews: PreviewProvider {
+    static var previews: some View {
+        EditProfileView()
+            .environmentObject(UserDataViewModel())
     }
 }

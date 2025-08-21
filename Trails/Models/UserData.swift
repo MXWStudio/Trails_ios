@@ -16,6 +16,9 @@ struct UserData {
     // 用于精确计算的个人数据
     var heightCM: Double = 180.0
     var weightKG: Double = 75.0
+
+    // 新增：用户的默认运动强度
+    var preferredIntensity: Intensity = .moderate
     
     var league: String = "红宝石" // 段位
 }

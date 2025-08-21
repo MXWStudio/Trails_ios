@@ -1,7 +1,8 @@
 import Foundation
 
 struct DailyGoal {
-    var intensity: Intensity = .moderate
+    // 现在由用户的偏好直接初始化
+    var intensity: Intensity
     
     var durationMinutes: Int {
         switch intensity {
@@ -31,9 +32,11 @@ struct DailyGoal {
     }
 }
 
-enum Intensity: String, CaseIterable {
+enum Intensity: String, CaseIterable, Identifiable {
     case beginner = "新手"
     case moderate = "适中"
     case advanced = "进阶"
     case professional = "专业"
+    
+    var id: String { self.rawValue }
 }

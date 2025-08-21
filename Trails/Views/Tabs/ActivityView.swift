@@ -69,7 +69,8 @@ struct ActivityView: View {
 // MARK: - 预览
 struct ActivityView_Previews: PreviewProvider {
     static var previews: some View {
-        ActivityView(goal: DailyGoal())
+        ActivityView(goal: DailyGoal(intensity: .moderate))
             .environmentObject(MotionManager())
+            .environmentObject(UserDataViewModel())
     }
 }

@@ -29,3 +29,11 @@ struct DailyQuestsView: View {
         }
     }
 }
+
+// MARK: - 预览
+struct DailyQuestsView_Previews: PreviewProvider {
+    static var previews: some View {
+        DailyQuestsView()
+            .environmentObject(UserDataViewModel())
+    }
+}

@@ -6,12 +6,5 @@ struct DailyQuest: Identifiable {
     var progress: Int
     var target: Int
     var rewardCoins: Int
-    
-    var isCompleted: Bool {
-        return progress >= target
-    }
-    
-    var progressPercentage: Double {
-        return Double(progress) / Double(target)
-    }
+    var isCompleted: Bool { progress >= target }
 }
