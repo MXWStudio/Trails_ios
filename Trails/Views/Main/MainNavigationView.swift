@@ -41,7 +41,6 @@ struct MainNavigationView: View {
                 selectedTab = newTab
             }
         }
-        .edgesIgnoringSafeArea(.bottom) // 让底部导航栏延伸到安全区域
     }
 }
 

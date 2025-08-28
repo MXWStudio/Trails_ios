@@ -59,27 +59,24 @@ struct BottomTabView: View {
                     selectedTab = tab
                     onTabChanged(tab)
                 }) {
-                    VStack(spacing: 4) {
+                    VStack(spacing: 6) {
                         Image(systemName: tab.iconName)
-                            .font(.system(size: 20))
+                            .font(.system(size: 18))
                             .foregroundColor(selectedTab == tab ? .blue : .gray)
                         
                         Text(tab.title)
                             .font(.caption)
                             .foregroundColor(selectedTab == tab ? .blue : .gray)
                     }
+                    .padding(.vertical, 2)
                 }
                 .frame(maxWidth: .infinity)
             }
         }
-        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.top, 5)
+        .padding(.bottom, 5) // 增加底部padding，确保文字不被遮挡
         .background(Color(.systemBackground))
-        .overlay(
-            Rectangle()
-                .frame(height: 0.5)
-                .foregroundColor(Color(.separator)),
-            alignment: .top
-        )
     }
 }
 

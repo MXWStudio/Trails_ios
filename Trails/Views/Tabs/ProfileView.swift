@@ -45,11 +45,13 @@ struct ProfileView: View {
                     
                     // 关注/关注者
                     HStack {
+                        Spacer()
                         VStack { Text("\(userDataVM.user.followers)").bold(); Text("关注") }
                         Spacer()
                         VStack { Text("\(userDataVM.user.following)").bold(); Text("关注者") }
                         Spacer()
                         Button("+ 添加好友") {}
+                        Spacer()
                     }
                     .padding(.horizontal)
                     
