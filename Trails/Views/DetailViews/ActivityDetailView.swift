@@ -112,16 +112,3 @@ struct ActivityDetailView: View {
     }
 }
 
-// MARK: - 预览代码 (用于在 Xcode 中预览)
-// ===================================================================
-struct ActivityDetailView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            ActivityDetailView(
-                activity: .running,
-                goal: DailyGoal(intensity: .moderate)
-            )
-            .environmentObject(UserDataViewModel())
-        }
-    }
-}
