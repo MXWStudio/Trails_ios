@@ -4,52 +4,54 @@ struct EditProfileView: View {
     @EnvironmentObject var userDataVM: UserDataViewModel
     @Environment(\.presentationMode) var presentationMode
     
-    @State private var height: Double = 180.0
-    @State private var weight: Double = 75.0
-    @State private var preferredIntensity: Intensity = .moderate
+    // 使用 Set 来管理选择，更高效
+    @State private var selectedActivities: Set<ActivityType> = []
 
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("身体数据")) {
-                    Stepper("身高: \(height, specifier: "%.0f") cm", value: $height, in: 100...250)
-                    Stepper("体重: \(weight, specifier: "%.1f") kg", value: $weight, in: 30...200, step: 0.5)
-                }
+                // ... 原有的身体数据和运动偏好 Section ...
                 
-                // 新增：默认运动强度选择
-                Section(header: Text("运动偏好")) {
-                    Picker("默认运动强度", selection: $preferredIntensity) {
-                        ForEach(Intensity.allCases) { intensity in
-                            Text(intensity.rawValue).tag(intensity)
+                // 新增：选择最爱的运动
+                Section(header: Text("我的运动 (最多选择4项)")) {
+                    ForEach(ActivityType.allCases) { activity in
+                        Button(action: {
+                            // 点击时更新 Set
+                            if selectedActivities.contains(activity) {
+                                selectedActivities.remove(activity)
+                            } else {
+                                if selectedActivities.count < 4 {
+                                    selectedActivities.insert(activity)
+                                }
+                            }
+                        }) {
+                            HStack {
+                                Text(activity.rawValue)
+                                Spacer()
+                                if selectedActivities.contains(activity) {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.blue)
+                                }
+                            }
                         }
+                        .foregroundColor(.primary) // 保证文字颜色正常
                     }
                 }
             }
             .navigationTitle("编辑个人资料")
             .onAppear {
-                // 视图出现时，从 ViewModel 加载当前数据到 @State 变量
-                self.height = userDataVM.user.heightCM
-                self.weight = userDataVM.user.weightKG
-                self.preferredIntensity = userDataVM.user.preferredIntensity
+                // 每次视图出现时，都从 ViewModel 同步一次数据
+                self.selectedActivities = Set(userDataVM.user.favoriteActivities)
             }
             .navigationBarItems(
                 leading: Button("取消") { presentationMode.wrappedValue.dismiss() },
                 trailing: Button("保存") {
                     // 保存数据回 ViewModel
-                    userDataVM.user.heightCM = height
-                    userDataVM.user.weightKG = weight
-                    userDataVM.user.preferredIntensity = preferredIntensity
+                    // 将 Set 转回 Array 并保持原有顺序
+                    userDataVM.user.favoriteActivities = ActivityType.allCases.filter { selectedActivities.contains($0) }
                     presentationMode.wrappedValue.dismiss()
                 }
             )
         }
-    }
-}
-
-// MARK: - 预览
-struct EditProfileView_Previews: PreviewProvider {
-    static var previews: some View {
-        EditProfileView()
-            .environmentObject(UserDataViewModel())
     }
 }
