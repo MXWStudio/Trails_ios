@@ -31,10 +31,15 @@ Trails/
 │   │   ├── ActivityView.swift        # 运动追踪页面
 │   │   ├── ProfileView.swift         # 个人页面
 │   │   └── DailyQuestsView.swift     # 每日任务视图
+│   ├── DetailViews/                   # 详情页面视图
+│   │   ├── ActivityDetailView.swift  # 🆕 运动详情页面
+│   │   ├── FeaturedRoutesView.swift  # 推荐路线页面  
+│   │   └── MapDetailView.swift       # 地图详情页面
 │   └── Subviews/                     # 子视图组件
 │       ├── ActivityDataPanel.swift   # 运动数据面板
 │       ├── ActivitySummaryView.swift # 运动总结视图
 │       ├── EditProfileView.swift     # 编辑资料视图
+│       ├── InfoCardView.swift        # 🆕 信息卡片组件
 │       └── StatCard.swift            # 统计卡片组件
 ├── Models/                           # 数据模型
 │   ├── TrailModels.swift            # 核心模型
@@ -60,6 +65,7 @@ Trails/
 - **实时监控**: 时长、距离、卡路里
 - **数据管理**: 开始/停止/重置功能
 - **地图集成**: 全屏地图背景显示
+- **运动详情**: 详细的运动介绍和参数展示
 - **模拟数据**: 便于开发测试
 
 ### 🎮 游戏化系统
@@ -132,6 +138,39 @@ ActivityView (从TodayGoalView启动)
 
 - **单元测试**: `Cmd + U`
 - **UI测试**: 选择 TrailsUITests 方案
+
+## 🆕 最新更新
+
+### ActivityDetailView - 运动详情页面
+- **功能**: 展示具体运动项目的详细信息
+- **特色**: 
+  - 交互式地图显示运动路线
+  - 使用 InfoCardView 组件展示运动参数
+  - 游戏化奖励系统（XP、成就）
+  - 社交元素展示
+  - 悬浮的"开始运动"按钮
+- **技术实现**: 
+  - 使用 ScrollView 实现滚动布局
+  - 集成 MapKit 展示地图
+  - 模块化设计，可重用的信息卡片
+  - 响应式布局适配不同屏幕
+
+### InfoCardView - 信息卡片组件  
+- **功能**: 可重用的信息展示卡片
+- **参数**:
+  - `icon`: SF Symbol 图标名称
+  - `value`: 主要数值（如距离、时间）
+  - `label`: 标签文字说明
+- **设计特点**:
+  - 垂直布局，图标+数值+标签
+  - 圆角卡片样式，浅灰色背景
+  - 自适应宽度，支持水平排列
+  - 蓝色图标主题，突出视觉层次
+
+### 组件集成
+- `ActivityDetailView` 使用 `InfoCardView` 展示运动的核心信息
+- 所有组件都包含 SwiftUI 预览代码，便于开发调试
+- 符合应用整体的设计语言和用户体验
 
 ---
 
