@@ -40,14 +40,19 @@ Trails/
 │       ├── ActivitySummaryView.swift # 运动总结视图
 │       ├── EditProfileView.swift     # 编辑资料视图
 │       ├── InfoCardView.swift        # 🆕 信息卡片组件
-│       └── StatCard.swift            # 统计卡片组件
+│       ├── StatCard.swift            # 统计卡片组件
+│       ├── CommunityFeedView.swift   # 🆕 社区动态视图
+│       ├── LeaderboardPageView.swift # 🆕 排行榜页面视图
+│       └── PostCardView.swift        # 🆕 动态卡片组件
 │       # 注: 天气、装备、排行榜、点评组件已集成到ActivityDetailView中
 ├── Models/                           # 数据模型
 │   ├── TrailModels.swift            # 核心模型
 │   ├── UserData.swift               # 用户数据模型
 │   ├── DailyGoal.swift              # 每日目标模型
 │   ├── DailyQuest.swift             # 每日任务模型
-│   └── Achievement.swift            # 成就模型
+│   ├── Achievement.swift            # 成就模型
+│   ├── CommunityPost.swift          # 🆕 社区动态模型
+│   └── RankedUser.swift             # 🆕 排行榜用户模型
 ├── Managers/                         # 数据管理器
 │   └── MotionManager.swift          # 运动数据管理
 ├── Helpers/                          # 帮助类和样式
@@ -74,6 +79,12 @@ Trails/
 - **段位系统**: 红宝石等段位展示
 - **每日任务**: 动态任务系统和金币奖励
 - **成就系统**: 解锁各类运动成就
+
+### 🌐 社区功能
+- **好友动态**: 查看好友的运动分享和成就解锁
+- **互动系统**: 点赞和评论功能
+- **排行榜**: 基于经验值的用户排名
+- **分享功能**: 运动记录和成就展示
 
 ### 👤 个人中心
 - **用户资料**: 个人信息管理和编辑
@@ -141,6 +152,72 @@ ActivityView (从TodayGoalView启动)
 - **UI测试**: 选择 TrailsUITests 方案
 
 ## 🆕 最新更新
+
+### 社区功能模块 - 用户互动和排行榜
+- **功能**: 完整的社区交互系统，包含动态分享和排行榜功能
+- **特色**:
+  - 双标签页设计：好友动态 + 排行榜
+  - 动态卡片展示：运动记录、成就解锁、等级提升
+  - 互动功能：点赞和评论系统
+  - 实时排行榜：基于经验值的用户排名
+  - 地图快照：运动记录包含路线预览
+- **技术实现**:
+  - 使用 Picker 和 SegmentedPickerStyle 实现标签切换
+  - 模块化设计：CommunityFeedView 和 LeaderboardPageView
+  - 数据模型：CommunityPost 和 RankedUser
+  - 响应式布局：ScrollView + LazyVStack 优化性能
+
+### 新增的社区组件
+
+#### CommunityView - 社区主视图
+- **功能**: 社区功能的主容器，管理动态和排行榜的切换
+- **特色**:
+  - 顶部分段控制器，支持动态/排行榜切换
+  - 添加好友按钮（待实现）
+  - 统一的导航栏设计
+
+#### CommunityFeedView - 好友动态视图
+- **功能**: 展示好友的运动分享和成就动态
+- **特色**:
+  - 使用 PostCardView 组件展示每条动态
+  - 支持滚动浏览和实时更新
+  - 模拟真实的社交体验
+
+#### PostCardView - 动态卡片组件
+- **功能**: 单条动态内容的展示组件
+- **参数**:
+  - `post`: CommunityPost 类型，包含动态的完整信息
+- **设计特点**:
+  - 用户头像和信息的横向布局
+  - 动态类型和时间戳显示
+  - 条件渲染地图快照（针对运动记录）
+  - 底部互动按钮：点赞和评论计数
+
+#### LeaderboardPageView - 排行榜视图
+- **功能**: 展示基于经验值的用户排行榜
+- **特色**:
+  - List 布局展示排名信息
+  - 排名、头像、姓名、经验值的完整展示
+  - 支持动态数据更新
+
+#### 数据模型
+
+##### CommunityPost - 社区动态模型
+- **属性**:
+  - `userName`: 用户名称
+  - `userAvatar`: 用户头像（SF Symbol）
+  - `postType`: 动态类型（运动/成就/升级）
+  - `timestamp`: 发布时间
+  - `description`: 动态描述
+  - `likes/comments`: 互动数据
+  - `activityMapSnapshot`: 地图快照（可选）
+
+##### RankedUser - 排行榜用户模型
+- **属性**:
+  - `rank`: 排名
+  - `name`: 用户名
+  - `avatar`: 头像
+  - `xp`: 经验值
 
 ### ActivityDetailView - 运动详情页面
 - **功能**: 展示具体运动项目的详细信息
