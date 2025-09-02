@@ -81,6 +81,35 @@ struct ProfileView: View {
                     }
                     .padding(.horizontal)
                     
+                    // 新增：生命日志入口
+                    VStack(alignment: .leading) {
+                        Text("生命日志").font(.headline).padding(.horizontal)
+                        HStack {
+                            NavigationLink(destination: FootprintMapView()) {
+                                StatCard(value: "足迹", name: "地图", icon: "map.fill", color: .green)
+                            }
+                            NavigationLink(destination: FirstsCollectionView()) {
+                               StatCard(value: "我的", name: "第一次", icon: "rosette", color: .purple)
+                            }
+                        }
+                    }.padding(.horizontal)
+                    
+                    // 新增：小队挑战入口 (如果有小队的话)
+                    if let team = userDataVM.user.team {
+                        NavigationLink(destination: TeamView(team: team)) {
+                            VStack(alignment: .leading) {
+                                Text(team.name).font(.headline)
+                                Text("本周目标：\(team.weeklyProgress)/\(team.weeklyGoal) 次运动").font(.subheadline)
+                                ProgressView(value: Double(team.weeklyProgress), total: Double(team.weeklyGoal))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.green.opacity(0.1))
+                            .cornerRadius(20)
+                        }
+                        .foregroundColor(.primary)
+                        .padding(.horizontal)
+                    }
                     // 概览
                     VStack(alignment: .leading) {
                         Text("概览").font(.headline).padding(.horizontal)

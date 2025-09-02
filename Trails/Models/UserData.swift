@@ -18,9 +18,16 @@ struct UserData {
         DecorationItem(name: "营地帐篷", imageName: "tent.fill"),
         DecorationItem(name: "篝火", imageName: "bonfire.fill")
     ]
-
-
     
     // 新增：用户的收藏运动类型，最多4个
     var favoriteActivities: [ActivityType] = [.cycling, .hiking, .running, .badminton]
+    
+    // 新增：生命日志相关数据
+    var firsts: [UserFirstRecord] = [
+        UserFirstRecord(title: "第一次使用 Trails", date: "2025-08-20", icon: "sparkles"),
+        UserFirstRecord(title: "第一次完成5公里", date: "2025-08-22", icon: "figure.run")
+    ]
+    
+    // 新增：小队数据 (可选，用户可能没有加入小队)
+    var team: Team? = Team(name: "冒险者小队", members: ["伟子哥", "用户A", "用户B"], weeklyProgress: 3, weeklyGoal: 5)
 }

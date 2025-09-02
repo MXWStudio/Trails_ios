@@ -2,6 +2,7 @@ import SwiftUI
 
 struct IPHomeView: View {
     @EnvironmentObject var userDataVM: UserDataViewModel
+    @State private var feedbackMessage: String = ""
 
     var body: some View {
         ZStack {
@@ -12,6 +13,23 @@ struct IPHomeView: View {
             VStack {
                 Spacer()
                 
+                // 新增：情感化反馈气泡
+                if !feedbackMessage.isEmpty {
+                    Text(feedbackMessage)
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 5)
+                        .transition(.scale.animation(.spring()))
+                        .onAppear {
+                            // 3秒后自动消失
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                withAnimation {
+                                    feedbackMessage = ""
+                                }
+                            }
+                        }
+                }
                 // 伙伴IP
                 Image(systemName: userDataVM.user.companion.appearanceName)
                     .font(.system(size: 150))
@@ -54,5 +72,11 @@ struct IPHomeView: View {
         }
         .navigationTitle("我的伙伴")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // 视图出现时，显示一句问候
+            withAnimation {
+                feedbackMessage = userDataVM.user.companion.getFeedback(for: .appOpened)
+            }
+        }
     }
 }
