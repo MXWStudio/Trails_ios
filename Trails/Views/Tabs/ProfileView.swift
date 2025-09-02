@@ -43,6 +43,32 @@ struct ProfileView: View {
                     .padding()
                     .background(Color.blue)
                     
+                    // 新增：伙伴家园入口
+                    NavigationLink(destination: IPHomeView()) {
+                        VStack(spacing: 10) {
+                            // 使用伙伴的外观
+                            Image(systemName: userDataVM.user.companion.appearanceName)
+                                .font(.system(size: 60))
+                                .foregroundColor(.orange)
+                            
+                            Text("\(userDataVM.user.companion.name)的家")
+                                .font(.title2).bold()
+                            
+                            Text("等级: \(userDataVM.user.companion.level)")
+                                .font(.headline)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 4)
+                                .background(Color.orange.opacity(0.2))
+                                .cornerRadius(10)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.orange.opacity(0.1))
+                        .cornerRadius(20)
+                    }
+                    .foregroundColor(.primary) // 保证 NavigationLink 样式正常
+                    .padding(.horizontal)
+                    
                     // 关注/关注者
                     HStack {
                         Spacer()
@@ -61,29 +87,50 @@ struct ProfileView: View {
                         HStack {
                             StatCard(value: "\(userDataVM.user.streakDays)", name: "打卡天数", icon: "flame.fill", color: .orange)
                             StatCard(value: "\(userDataVM.user.totalXP)", name: "经验", icon: "sparkle", color: .yellow)
-                            StatCard(value: userDataVM.user.league, name: "段位", icon: "shield.fill", color: .red)
+                            StatCard(value: "\(userDataVM.user.league)", name: "段位", icon: "shield.fill", color: .red)
                         }
                     }.padding(.horizontal)
                     
                     // 成就
                     VStack(alignment: .leading) {
                         Text("成就").font(.headline).padding(.horizontal)
-                        // ... 成就徽章的横向滚动视图 ...
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 15) {
+                                ForEach(userDataVM.achievements.prefix(6)) { achievement in
+                                    VStack {
+                                        Image(systemName: achievement.iconName)
+                                            .font(.title2)
+                                            .foregroundColor(achievement.isUnlocked ? .yellow : .gray)
+                                            .frame(width: 60, height: 60)
+                                            .background(
+                                                Circle()
+                                                    .fill(achievement.isUnlocked ? Color.yellow.opacity(0.2) : Color.gray.opacity(0.2))
+                                            )
+                                        
+                                        Text(achievement.title)
+                                            .font(.caption)
+                                            .multilineTextAlignment(.center)
+                                            .lineLimit(2)
+                                            .frame(width: 60)
+                                    }
+                                    .opacity(achievement.isUnlocked ? 1.0 : 0.5)
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
                     }
                     
                     // 个人数据编辑按钮
                     Button("编辑个人资料") { isEditingProfile = true }
                         .padding(.horizontal)
-                    
-                    // 为底部导航栏预留空间
-                    Color.clear
-                        .frame(height: 80)
                 }
             }
             .navigationTitle("个人资料")
             .navigationBarHidden(true)
             .sheet(isPresented: $isEditingProfile) {
+                // 修复：需要将 UserDataViewModel 传递给编辑视图
                 EditProfileView()
+                    .environmentObject(userDataVM)
             }
         }
     }
