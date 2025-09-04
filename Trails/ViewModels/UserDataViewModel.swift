@@ -1,4 +1,6 @@
 import SwiftUI
+import Supabase
+
 
 // DateFormatter 扩展
 extension DateFormatter {
@@ -22,11 +24,22 @@ class UserDataViewModel: ObservableObject {
         DailyQuest(title: "燃烧 300 大卡", progress: 0, target: 300, rewardCoins: 15)
     ]
     
+    init() {
+        // 监听用户认证成功的通知
+        NotificationCenter.default.addObserver(
+            forName: .userDidAuthenticate,
+            object: nil,
+            queue: .main
+        ) { _ in
+            Task {
+                await self.fetchCurrentUserProfile()
+            }
+        }
+    }
+    
     // --- Supabase 数据交互 ---
     
     func fetchCurrentUserProfile() async {
-        // 暂时注释掉 Supabase 相关代码
-        /*
         guard let currentUserID = try? await SupabaseManager.shared.client.auth.session.user.id else {
             print("No active user session.")
             return
@@ -47,10 +60,6 @@ class UserDataViewModel: ObservableObject {
             // 如果用户资料不存在，创建一个新的
             await createNewUserProfile(userID: currentUserID)
         }
-        */
-        
-        // 临时实现：创建默认用户数据
-        await createDefaultUserProfile()
     }
     
     func createNewUserProfile(userID: UUID) async {
@@ -78,7 +87,10 @@ class UserDataViewModel: ObservableObject {
             ]
         )
         
-        // 暂时注释掉 Supabase 相关代码
+        // 临时实现：直接设置用户数据
+        self.user = newUser
+        
+        // 当Supabase包正确安装后，启用以下代码：
         /*
         do {
             try await SupabaseManager.shared.client
@@ -92,9 +104,6 @@ class UserDataViewModel: ObservableObject {
             print("Error creating user profile: \(error)")
         }
         */
-        
-        // 临时实现：直接设置用户数据
-        self.user = newUser
     }
     
     func createDefaultUserProfile() async {
@@ -104,8 +113,13 @@ class UserDataViewModel: ObservableObject {
     func updateUserProfile() async {
         guard user != nil else { return }
         
-        // 暂时注释掉 Supabase 相关代码
+        // 临时实现：打印更新信息
+        print("临时实现：用户数据已更新（本地）")
+        
+        // 当Supabase包正确安装后，启用以下代码：
         /*
+        guard let userToUpdate = user else { return }
+        
         print("Attempting to update user profile in Supabase...")
         do {
             try await SupabaseManager.shared.client
@@ -118,9 +132,6 @@ class UserDataViewModel: ObservableObject {
             print("Error updating user profile: \(error)")
         }
         */
-        
-        // 临时实现：打印更新信息
-        print("临时实现：用户数据已更新（本地）")
     }
     
     // --- 本地游戏化逻辑 (会触发云端同步) ---
