@@ -66,7 +66,9 @@ Trails/
 
 ### 🔐 用户认证
 - **Apple 登录**: 使用 Sign in with Apple
-- **状态管理**: 自动保存登录状态
+- **Email 登录**: 支持邮箱注册和登录功能
+- **Supabase 集成**: 完整的后端认证和数据存储
+- **状态管理**: 自动保存登录状态，支持会话检查
 - **模拟器支持**: 开发调试模式
 
 ### 🏃‍♂️ 运动追踪
@@ -104,6 +106,39 @@ Trails/
 | 运动追踪 | 实时监控运动数据 | 地图背景，实时数据显示 |
 | 个人 | 用户信息和统计 | 经验值系统，段位展示 |
 
+## 🗄️ Supabase 配置
+
+项目已集成 Supabase 作为后端服务，提供认证和数据存储功能。
+
+### 配置步骤
+1. **Supabase 项目设置**: 项目已配置连接到 Supabase 实例
+2. **数据库表结构**: 需要创建 `profiles` 表来存储用户数据
+3. **认证提供商**: 支持 Apple 登录和 Email 登录
+
+### 数据库表结构
+```sql
+-- profiles 表
+CREATE TABLE profiles (
+  id UUID REFERENCES auth.users NOT NULL PRIMARY KEY,
+  name TEXT,
+  total_xp INTEGER DEFAULT 0,
+  join_year INTEGER,
+  followers INTEGER DEFAULT 0,
+  following INTEGER DEFAULT 0,
+  streak_days INTEGER DEFAULT 0,
+  league TEXT DEFAULT '青铜',
+  coins INTEGER DEFAULT 50,
+  weight_kg DECIMAL,
+  preferred_intensity TEXT,
+  favorite_activities JSONB,
+  firsts JSONB,
+  team JSONB,
+  companion JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
 ## 🚀 运行项目
 
 1. 打开 `Trails.xcodeproj`
@@ -112,8 +147,14 @@ Trails/
 
 ### 登录测试
 
-**真机**: 使用真实 Apple ID 登录  
-**模拟器**: 点击"跳过登录"按钮
+**Apple 登录**: 
+- 真机: 使用真实 Apple ID 登录  
+- 模拟器: 点击"跳过登录"按钮
+
+**Email 登录**:
+- 点击"使用邮箱登录"按钮
+- 支持新用户注册和现有用户登录
+- 自动创建用户资料并同步到 Supabase
 
 ### 📝 社区发帖功能测试
 
@@ -148,9 +189,11 @@ ActivityView (从TodayGoalView启动)
 - **页面切换**: 支持在今日目标、社区、成就、个人页面间无缝切换
 
 ### 文件关联
-- `AuthenticationViewModel.swift` ← 管理登录状态
-- `UserDataViewModel.swift` ← 管理用户数据和任务系统
+- `SupabaseManager.swift` ← Supabase 客户端管理
+- `AuthenticationViewModel.swift` ← 管理登录状态 (Apple + Email)
+- `UserDataViewModel.swift` ← 管理用户数据和任务系统，支持云端同步
 - `MotionManager.swift` ← 管理运动数据追踪
+- `UserData.swift` ← 用户数据模型，支持 Codable 和数据库映射
 - `TrailModels.swift` ← 定义核心数据结构
 - `DailyGoal.swift` ← 每日运动目标配置
 - `DailyQuest.swift` ← 每日任务和奖励系统
@@ -643,6 +686,89 @@ PostCardView (展示 + 状态绑定)
 7. **本地化支持**: RelativeDateTimeFormatter 中文支持
 
 这次更新将社区功能从原型提升到了接近生产级别的完成度，为用户提供了完整、流畅、现代化的社交分享体验。
+
+## 🆕 最新重大更新 - Supabase 集成和 Email 登录 (2025.1.15)
+
+### 🔗 Supabase 后端集成
+- **SupabaseManager**: 单例模式管理 Supabase 客户端连接
+- **完整认证流程**: 支持 Apple 登录和 Email 登录的混合认证
+- **数据模型重构**: 所有模型遵循 Codable 协议，支持与数据库的无缝交互
+- **自动会话管理**: 应用启动时自动检查用户登录状态
+
+### 📧 Email 登录系统
+- **双模式登录界面**: 
+  - Apple 登录按钮（保持原有功能）
+  - Email 登录按钮（新增功能）
+- **完整的注册/登录流程**:
+  - 邮箱地址验证
+  - 密码安全输入
+  - 切换注册/登录模式
+  - 实时错误提示
+- **现代化 UI 设计**:
+  - Sheet 模态展示
+  - 表单验证
+  - 加载状态指示器
+  - 用户友好的错误处理
+
+### 🗄️ 数据持久化升级
+- **用户资料云端存储**: 
+  - 首次登录自动创建用户资料
+  - 实时同步用户数据到 Supabase
+  - 支持离线本地缓存
+- **数据模型 Codable 化**:
+  - UserData、CompanionIP、UserFirstRecord、Team 等所有模型支持序列化
+  - CodingKeys 映射数据库字段名
+  - 类型安全的数据转换
+
+### 🔧 架构优化
+- **改进的认证流程**:
+  ```swift
+  // 应用启动时自动检查登录状态
+  func checkUserSession() async
+  
+  // Apple 登录处理
+  func handleSignInWithApple(result: Result<ASAuthorization, Error>)
+  
+  // Email 登录/注册
+  func signInWithEmail(email: String, password: String) async
+  func signUpWithEmail(email: String, password: String) async
+  ```
+
+- **增强的用户数据管理**:
+  ```swift
+  // 获取用户资料，不存在时自动创建
+  func fetchCurrentUserProfile() async
+  
+  // 创建新用户资料
+  func createNewUserProfile(userID: UUID) async
+  
+  // 实时同步用户数据
+  func updateUserProfile() async
+  ```
+
+### 🎯 用户体验提升
+- **无缝登录体验**: 用户可以选择 Apple 登录或 Email 登录
+- **自动资料创建**: 新用户首次登录时自动创建完整的用户资料
+- **实时数据同步**: 用户的游戏化数据（XP、金币、成就等）实时保存到云端
+- **跨设备数据同步**: 用户在不同设备上登录时数据保持一致
+
+### 🛠️ 技术实现亮点
+1. **Supabase Swift SDK**: 使用官方 Swift SDK 进行类型安全的 API 调用
+2. **异步并发**: 全面使用 async/await 确保 UI 响应性
+3. **错误处理**: 完善的错误处理和用户提示机制
+4. **模块化设计**: SupabaseManager 单例确保全局一致的数据库连接
+5. **数据模型设计**: CodingKeys 支持数据库字段名映射
+6. **Main Actor**: 确保 UI 更新在主线程执行
+
+### 📋 数据库表结构
+项目包含完整的 SQL 建表语句，支持：
+- 用户基本信息存储
+- 游戏化数据（经验值、段位、金币）
+- 社交数据（关注者、关注数）
+- 个性化设置（偏好运动、体重等）
+- 复杂数据类型（JSON 字段存储伙伴、团队、第一次记录）
+
+这次更新将 Trails 从单机应用升级为具有完整后端支持的云端应用，为用户提供跨设备的数据同步和更安全的认证体验。
 
 ---
 

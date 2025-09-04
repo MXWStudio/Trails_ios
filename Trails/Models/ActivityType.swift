@@ -1,7 +1,7 @@
 import SwiftUI
 
 // 定义运动类型的数据模型
-enum ActivityType: String, CaseIterable, Identifiable {
+enum ActivityType: String, CaseIterable, Identifiable, Codable {
     case cycling = "骑行"
     case hiking = "徒步"
     case running = "跑步"

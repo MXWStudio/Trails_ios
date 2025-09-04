@@ -6,7 +6,7 @@ struct FirstsCollectionView: View {
     var body: some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 20) {
-                ForEach(userDataVM.user.firsts) { record in
+                ForEach(userDataVM.user?.firsts ?? []) { record in
                     VStack {
                         Image(systemName: record.icon)
                             .font(.system(size: 40))

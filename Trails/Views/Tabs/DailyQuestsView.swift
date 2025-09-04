@@ -10,7 +10,7 @@ struct DailyQuestsView: View {
                 HStack {
                     Text("每日任务").font(.title).bold()
                     Spacer()
-                    Label("\(userData.user.coins)", systemImage: "diamond.fill").foregroundColor(.blue)
+                    Label("\(userData.user?.coins ?? 0)", systemImage: "diamond.fill").foregroundColor(.blue)
                 }
             }
             

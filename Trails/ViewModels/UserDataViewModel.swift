@@ -1,7 +1,20 @@
-import Foundation
+import SwiftUI
 
+// DateFormatter 扩展
+extension DateFormatter {
+    static let shortDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+}
+
+@MainActor // 确保所有对 @Published 属性的修改都在主线程上
 class UserDataViewModel: ObservableObject {
-    @Published var user = UserData()
+    // 从 Supabase 加载的用户数据
+    @Published var user: UserData?
+    
+    // 本地管理的游戏化数据 (未来也可以从 Supabase 加载)
     @Published var achievements: [Achievement] = Achievement.sampleAchievements
     @Published var dailyQuests: [DailyQuest] = [
         DailyQuest(title: "赚取 100 经验", progress: 0, target: 100, rewardCoins: 10),
@@ -9,19 +22,133 @@ class UserDataViewModel: ObservableObject {
         DailyQuest(title: "燃烧 300 大卡", progress: 0, target: 300, rewardCoins: 15)
     ]
     
+    // --- Supabase 数据交互 ---
+    
+    func fetchCurrentUserProfile() async {
+        // 暂时注释掉 Supabase 相关代码
+        /*
+        guard let currentUserID = try? await SupabaseManager.shared.client.auth.session.user.id else {
+            print("No active user session.")
+            return
+        }
+        
+        do {
+            let profile: UserData = try await SupabaseManager.shared.client
+                .from("profiles")
+                .select()
+                .eq("id", value: currentUserID)
+                .single()
+                .execute()
+                .value
+                
+            self.user = profile
+        } catch {
+            print("Error fetching user profile: \(error)")
+            // 如果用户资料不存在，创建一个新的
+            await createNewUserProfile(userID: currentUserID)
+        }
+        */
+        
+        // 临时实现：创建默认用户数据
+        await createDefaultUserProfile()
+    }
+    
+    func createNewUserProfile(userID: UUID) async {
+        let newUser = UserData(
+            id: userID,
+            name: "新用户",
+            totalXP: 0,
+            joinYear: Calendar.current.component(.year, from: Date()),
+            followers: 0,
+            following: 0,
+            streakDays: 0,
+            league: "青铜",
+            coins: 50,
+            weightKG: 70.0,
+            preferredIntensity: .moderate,
+            favoriteActivities: [],
+            firsts: [
+                UserFirstRecord(title: "第一次使用 Trails", date: DateFormatter.shortDate.string(from: Date()), icon: "sparkles")
+            ],
+            team: nil,
+            companion: CompanionIP(),
+            ownedDecorations: [
+                DecorationItem(name: "小花", imageName: "flower.fill"),
+                DecorationItem(name: "宝石", imageName: "gem.fill")
+            ]
+        )
+        
+        // 暂时注释掉 Supabase 相关代码
+        /*
+        do {
+            try await SupabaseManager.shared.client
+                .from("profiles")
+                .insert(newUser, returning: .minimal)
+                .execute()
+            
+            self.user = newUser
+            print("Successfully created new user profile.")
+        } catch {
+            print("Error creating user profile: \(error)")
+        }
+        */
+        
+        // 临时实现：直接设置用户数据
+        self.user = newUser
+    }
+    
+    func createDefaultUserProfile() async {
+        await createNewUserProfile(userID: UUID())
+    }
+    
+    func updateUserProfile() async {
+        guard user != nil else { return }
+        
+        // 暂时注释掉 Supabase 相关代码
+        /*
+        print("Attempting to update user profile in Supabase...")
+        do {
+            try await SupabaseManager.shared.client
+                .from("profiles")
+                .update(userToUpdate, returning: .minimal)
+                .eq("id", value: userToUpdate.id)
+                .execute()
+            print("Successfully updated user profile.")
+        } catch {
+            print("Error updating user profile: \(error)")
+        }
+        */
+        
+        // 临时实现：打印更新信息
+        print("临时实现：用户数据已更新（本地）")
+    }
+    
+    // --- 本地游戏化逻辑 (会触发云端同步) ---
+    
     func addXP(_ amount: Int) {
-        user.totalXP += amount
-        // 检查与XP相关的任务
+        guard user != nil else { return }
+        user?.totalXP += amount
+        
         if let index = dailyQuests.firstIndex(where: { $0.title.contains("经验") }) {
             dailyQuests[index].progress += amount
         }
+        
+        // 修改后，自动保存到云端
+        Task { await updateUserProfile() }
     }
     
     func addCoins(_ amount: Int) {
-        user.coins += amount
+        guard user != nil else { return }
+        user?.coins += amount
+        Task { await updateUserProfile() }
+    }
+
+    func levelUpCompanion() {
+        guard user != nil else { return }
+        user?.companion.level += 1
+        Task { await updateUserProfile() }
     }
     
-    // 示例：完成一个基于距离的任务
     func checkDistanceQuest(distanceKm: Double) {
         if let index = dailyQuests.firstIndex(where: { $0.title.contains("公里") }) {
             if distanceKm >= 2.0 {
@@ -30,49 +157,15 @@ class UserDataViewModel: ObservableObject {
         }
     }
     
-    // 示例：完成一个基于卡路里的任务
     func checkCaloriesQuest(calories: Double) {
         if let index = dailyQuests.firstIndex(where: { $0.title.contains("大卡") }) {
             dailyQuests[index].progress += Int(calories)
         }
     }
-
-    // 新增：升级伙伴的方法
-    func levelUpCompanion() {
-        user.companion.level += 1
-        // 可以在这里添加升级时的特殊奖励逻辑
-    }
     
-    // 新增：解锁新装饰品的方法
-    func unlockDecoration(_ item: DecorationItem) {
-        // 确保不重复添加
-        if !user.ownedDecorations.contains(where: { $0.name == item.name }) {
-            user.ownedDecorations.append(item)
-        }
-    }
-    
-    // 新增：解锁成就的方法
     func unlockAchievement(withTitle title: String) {
         if let index = achievements.firstIndex(where: { $0.title == title }) {
             achievements[index].isUnlocked = true
         }
     }
-    
-    // 新增：检查是否应该解锁成就
-    func checkAchievements() {
-        // 检查首次跑步成就
-        if user.totalXP > 0 {
-            if let achievement = achievements.first(where: { $0.title == "首次跑步" }), !achievement.isUnlocked {
-                unlockAchievement(withTitle: "首次跑步")
-            }
-        }
-        
-        // 检查连续运动成就
-        if user.streakDays >= 30 {
-            if let achievement = achievements.first(where: { $0.title == "持续运动者" }), !achievement.isUnlocked {
-                unlockAchievement(withTitle: "持续运动者")
-            }
-        }
-    }
 }
-

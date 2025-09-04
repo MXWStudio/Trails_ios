@@ -1,10 +1,7 @@
 import Foundation
 
 // 伙伴IP的数据模型
-import Foundation
-
-// 伙伴IP的数据模型
-struct CompanionIP {
+struct CompanionIP: Codable {
     var level: Int = 1
     var name: String = "小狐狸"
     
@@ -29,7 +26,7 @@ struct CompanionIP {
         }
     }
     
-    enum FeedbackEvent {
+    enum FeedbackEvent: Codable {
         case appOpened, completedWorkout, recordBroken, streakContinued
     }
 }

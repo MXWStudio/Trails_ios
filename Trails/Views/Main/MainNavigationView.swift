@@ -76,9 +76,13 @@ struct AchievementsWithNavigation: View {
 /// 个人页面包装器
 struct ProfileWithNavigation: View {
     @Binding var selectedTab: TabItem
+    @EnvironmentObject var userDataVM: UserDataViewModel
+    @EnvironmentObject var authViewModel: AuthenticationViewModel
     
     var body: some View {
         ProfileView()
+            .environmentObject(userDataVM)
+            .environmentObject(authViewModel)
     }
 }
 

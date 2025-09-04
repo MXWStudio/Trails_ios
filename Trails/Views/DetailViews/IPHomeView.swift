@@ -31,13 +31,13 @@ struct IPHomeView: View {
                         }
                 }
                 // 伙伴IP
-                Image(systemName: userDataVM.user.companion.appearanceName)
+                Image(systemName: userDataVM.user?.companion.appearanceName ?? "pawprint.fill")
                     .font(.system(size: 150))
                     .foregroundColor(.orange)
                     .padding()
                     .shadow(radius: 10)
                 
-                Text(userDataVM.user.companion.name)
+                Text(userDataVM.user?.companion.name ?? "小伙伴")
                     .font(.largeTitle).bold()
                 
                 Spacer()
@@ -50,7 +50,7 @@ struct IPHomeView: View {
                     
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 15) {
-                            ForEach(userDataVM.user.ownedDecorations) { item in
+                            ForEach(userDataVM.user?.ownedDecorations ?? []) { item in
                                 VStack {
                                     Image(systemName: item.imageName)
                                         .font(.largeTitle)
@@ -75,7 +75,7 @@ struct IPHomeView: View {
         .onAppear {
             // 视图出现时，显示一句问候
             withAnimation {
-                feedbackMessage = userDataVM.user.companion.getFeedback(for: .appOpened)
+                feedbackMessage = userDataVM.user?.companion.getFeedback(for: .appOpened) ?? "欢迎来到伙伴家园！"
             }
         }
     }

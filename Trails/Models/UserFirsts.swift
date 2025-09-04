@@ -1,7 +1,7 @@
 import Foundation
 
 // "第一次"记录的数据模型
-struct UserFirstRecord: Identifiable {
+struct UserFirstRecord: Identifiable, Codable {
     let id = UUID()
     let title: String
     let date: String
@@ -9,7 +9,7 @@ struct UserFirstRecord: Identifiable {
 }
 
 // 小队数据模型
-struct Team {
+struct Team: Codable {
     var name: String
     var members: [String] // 成员名字列表
     var weeklyProgress: Int

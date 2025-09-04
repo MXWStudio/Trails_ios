@@ -28,16 +28,16 @@ struct TodayGoalView: View {
 
     // 获取当前选中的运动类型
     private var currentActivity: ActivityType {
-        guard !userDataVM.user.favoriteActivities.isEmpty else {
+        guard let favoriteActivities = userDataVM.user?.favoriteActivities, !favoriteActivities.isEmpty else {
             return .running // 默认活动
         }
-        let safeIndex = min(selectedActivityIndex, userDataVM.user.favoriteActivities.count - 1)
-        return userDataVM.user.favoriteActivities[safeIndex]
+        let safeIndex = min(selectedActivityIndex, favoriteActivities.count - 1)
+        return favoriteActivities[safeIndex]
     }
     
     // 根据用户偏好和当前运动类型生成目标
     private var dailyGoal: DailyGoal {
-        DailyGoal(intensity: userDataVM.user.preferredIntensity)
+        DailyGoal(intensity: userDataVM.user?.preferredIntensity ?? .moderate)
     }
 
     var body: some View {
@@ -62,10 +62,10 @@ struct TodayGoalView: View {
                     .padding(.horizontal)
 
                     // 2. 左右滑动的运动卡片
-                    if !userDataVM.user.favoriteActivities.isEmpty {
+                    if !(userDataVM.user?.favoriteActivities.isEmpty ?? true) {
                         TabView(selection: $selectedActivityIndex) {
-                            ForEach(0..<userDataVM.user.favoriteActivities.count, id: \.self) { index in
-                                let activity = userDataVM.user.favoriteActivities[index]
+                            ForEach(0..<(userDataVM.user?.favoriteActivities.count ?? 0), id: \.self) { index in
+                                let activity = userDataVM.user?.favoriteActivities[index] ?? .cycling
                                 NavigationLink(destination: ActivityDetailView(activity: activity, goal: dailyGoal)) {
                                     ActivityCardView(activity: activity)
                                         .tag(index)

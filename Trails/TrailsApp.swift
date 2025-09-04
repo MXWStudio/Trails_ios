@@ -1,37 +1,40 @@
-//
-//  TrailsApp.swift
-//  Trails
-//
-//  Created by 孟祥伟 on 2025/8/20.
-//
-
 import SwiftUI
-import AuthenticationServices
-import MapKit
 
 @main
 struct TrailsApp: App {
-    // 使用 @StateObject 来管理整个应用的认证状态
     @StateObject private var authViewModel = AuthenticationViewModel()
-    // 添加运动数据管理器
     @StateObject private var motionManager = MotionManager()
-    // 添加一个全局的用户数据管理器
     @StateObject private var userDataViewModel = UserDataViewModel()
 
     var body: some Scene {
         WindowGroup {
-            // 根据登录状态决定显示哪个视图
+            RootView()
+                .environmentObject(authViewModel)
+                .environmentObject(motionManager)
+                .environmentObject(userDataViewModel)
+        }
+    }
+}
+
+struct RootView: View {
+    @EnvironmentObject var authViewModel: AuthenticationViewModel
+    @EnvironmentObject var userDataViewModel: UserDataViewModel
+    
+    var body: some View {
+        VStack {
             if authViewModel.isUserAuthenticated {
-                // 如果用户已登录，显示主导航视图 (默认显示今日目标页面)
                 MainNavigationView()
-                    .environmentObject(authViewModel)
-                    .environmentObject(motionManager) // 注入运动管理器到环境中
-                    .environmentObject(userDataViewModel) // 注入到环境中
+                    .task {
+                        // 登录成功后，立刻去获取用户的个人资料
+                        await userDataViewModel.fetchCurrentUserProfile()
+                    }
             } else {
-                // 如果用户未登录，显示登录页
                 LoginView()
-                    .environmentObject(authViewModel)
             }
+        }
+        .task {
+            // App 启动时检查用户是否已经登录，实现自动登录
+            await authViewModel.checkUserSession()
         }
     }
 }

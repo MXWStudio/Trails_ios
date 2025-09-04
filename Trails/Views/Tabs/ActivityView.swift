@@ -56,7 +56,9 @@ struct ActivityView: View {
         }
         .onAppear {
             motionManager.resetData()
-            motionManager.startTracking(user: userData.user)
+            if let user = userData.user {
+                motionManager.startTracking(user: user)
+            }
         }
         .sheet(isPresented: $showSummary) {
             ActivitySummaryView(goal: goal, motionManager: motionManager) {
@@ -69,7 +71,7 @@ struct ActivityView: View {
 // MARK: - 预览
 struct ActivityView_Previews: PreviewProvider {
     static var previews: some View {
-        ActivityView(goal: DailyGoal(intensity: .moderate))
+        ActivityView(goal: DailyGoal(intensity: Intensity.moderate))
             .environmentObject(MotionManager())
             .environmentObject(UserDataViewModel())
     }

@@ -1,10 +1,3 @@
-//
-//  LoginView.swift
-//  Trails
-//
-//  Created by 孟祥伟 on 2025/8/20.
-//
-
 import SwiftUI
 import AuthenticationServices
 
@@ -14,6 +7,12 @@ struct LoginView: View {
     @EnvironmentObject var authViewModel: AuthenticationViewModel
     // 定义背景颜色为纯白色
     let backgroundColor = Color.white
+    
+    // Email 登录状态
+    @State private var showEmailLogin = false
+    @State private var email = ""
+    @State private var password = ""
+    @State private var isSignUp = false
 
     var body: some View {
         ZStack {
@@ -48,6 +47,24 @@ struct LoginView: View {
                 .cornerRadius(12)
                 .padding(.horizontal, 40) // 左右边距
                 .disabled(authViewModel.isLoading) // 登录时禁用按钮
+                
+                // Email 登录按钮
+                Button(action: {
+                    showEmailLogin = true
+                }) {
+                    HStack {
+                        Image(systemName: "envelope.fill")
+                        Text("使用邮箱登录")
+                    }
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 55)
+                    .background(Color.blue)
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal, 40)
+                .disabled(authViewModel.isLoading)
                 
                 // 加载指示器
                 if authViewModel.isLoading {
@@ -108,13 +125,119 @@ struct LoginView: View {
                 Spacer()
             }
         }
+        .sheet(isPresented: $showEmailLogin) {
+            EmailLoginView(
+                email: $email,
+                password: $password,
+                isSignUp: $isSignUp,
+                authViewModel: authViewModel
+            )
+        }
     }
 }
 
-// SwiftUI 预览
-struct LoginView_Previews: PreviewProvider {
-    static var previews: some View {
-        LoginView()
-            .environmentObject(AuthenticationViewModel())
+// Email 登录模态视图
+struct EmailLoginView: View {
+    @Binding var email: String
+    @Binding var password: String
+    @Binding var isSignUp: Bool
+    let authViewModel: AuthenticationViewModel
+    @Environment(\.presentationMode) var presentationMode
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                Spacer()
+                
+                // 标题
+                Text(isSignUp ? "创建账户" : "邮箱登录")
+                    .font(.title.bold())
+                    .padding(.bottom, 30)
+                
+                // Email 输入框
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("邮箱地址")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    TextField("请输入邮箱地址", text: $email)
+                        .textFieldStyle(.roundedBorder)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                }
+                .padding(.horizontal, 20)
+                
+                // 密码输入框
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("密码")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    SecureField("请输入密码", text: $password)
+                        .textFieldStyle(.roundedBorder)
+                }
+                .padding(.horizontal, 20)
+                
+                // 登录/注册按钮
+                Button(action: {
+                    Task {
+                        if isSignUp {
+                            await authViewModel.signUpWithEmail(email: email, password: password)
+                        } else {
+                            await authViewModel.signInWithEmail(email: email, password: password)
+                        }
+                        if authViewModel.isUserAuthenticated {
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                    }
+                }) {
+                    Text(isSignUp ? "创建账户" : "登录")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color.blue)
+                        .cornerRadius(12)
+                }
+                .padding(.horizontal, 20)
+                .disabled(email.isEmpty || password.isEmpty || authViewModel.isLoading)
+                
+                // 切换登录/注册模式
+                Button(action: {
+                    isSignUp.toggle()
+                }) {
+                    Text(isSignUp ? "已有账户？点击登录" : "没有账户？点击注册")
+                        .font(.footnote)
+                        .foregroundColor(.blue)
+                }
+                .padding(.top, 10)
+                
+                // 错误提示
+                if let errorMessage = authViewModel.errorMessage {
+                    Text(errorMessage)
+                        .font(.footnote)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 10)
+                }
+                
+                if authViewModel.isLoading {
+                    ProgressView("处理中...")
+                        .progressViewStyle(CircularProgressViewStyle(tint: .blue))
+                        .scaleEffect(0.8)
+                        .padding(.top, 10)
+                }
+                
+                Spacer()
+            }
+            .navigationTitle("")
+            .navigationBarItems(
+                trailing: Button("取消") {
+                    presentationMode.wrappedValue.dismiss()
+                }
+            )
+        }
     }
 }
