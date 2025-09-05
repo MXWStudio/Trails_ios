@@ -6,5 +6,9 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<key>com.apple.developer.location</key>
+	<array>
+		<string>full-accuracy</string>
+	</array>
 </dict>
 </plist>
