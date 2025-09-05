@@ -5,6 +5,10 @@ struct UserData: Codable, Identifiable {
     // 将 id 改为 UUID 类型，并设为数据库的主键
     var id: UUID
     var name: String = "伟子哥"
+    var avatarURL: String? = nil // 头像URL，可选
+    var age: Int? = nil // 年龄，可选
+    var heightCM: Double? = nil // 身高（厘米），可选
+    var customTitle: String? = nil // 自定义称号，可选
     var totalXP: Int = 31946
     var joinYear: Int = 2025
     var followers: Int = 12
@@ -30,7 +34,10 @@ struct UserData: Codable, Identifiable {
     
     // Supabase 的表中列名通常是下划线风格，我们需要一个 CodingKey 来做转换
     enum CodingKeys: String, CodingKey {
-        case id, name, followers, following, league, coins, firsts, team, companion
+        case id, name, age, followers, following, league, coins, firsts, team, companion
+        case avatarURL = "avatar_url"
+        case heightCM = "height_cm"
+        case customTitle = "custom_title"
         case totalXP = "total_xp"
         case joinYear = "join_year"
         case streakDays = "streak_days"

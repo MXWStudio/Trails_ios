@@ -40,12 +40,16 @@ class UserDataViewModel: ObservableObject {
     // --- Supabase 数据交互 ---
     
     func fetchCurrentUserProfile() async {
+        print("👤 开始获取用户资料...")
         guard let currentUserID = try? await SupabaseManager.shared.client.auth.session.user.id else {
-            print("No active user session.")
+            print("❌ 没有活跃的用户会话")
             return
         }
         
+        print("🆔 当前用户ID: \(currentUserID)")
+        
         do {
+            print("🗄️ 正在从 profiles 表查询用户资料...")
             let profile: UserData = try await SupabaseManager.shared.client
                 .from("profiles")
                 .select()
@@ -54,18 +58,27 @@ class UserDataViewModel: ObservableObject {
                 .execute()
                 .value
                 
+            print("✅ 成功获取用户资料: \(profile.name)")
             self.user = profile
         } catch {
-            print("Error fetching user profile: \(error)")
+            print("❌ 获取用户资料失败: \(error)")
+            print("❌ 错误详情: \(error.localizedDescription)")
+            print("🔄 准备为用户创建新的资料...")
             // 如果用户资料不存在，创建一个新的
             await createNewUserProfile(userID: currentUserID)
         }
     }
     
     func createNewUserProfile(userID: UUID) async {
+        print("🆕 开始创建新的用户资料，用户ID: \(userID)")
+        
         let newUser = UserData(
             id: userID,
             name: "新用户",
+            avatarURL: nil,
+            age: nil,
+            heightCM: nil,
+            customTitle: nil,
             totalXP: 0,
             joinYear: Calendar.current.component(.year, from: Date()),
             followers: 0,
@@ -87,23 +100,25 @@ class UserDataViewModel: ObservableObject {
             ]
         )
         
-        // 临时实现：直接设置用户数据
-        self.user = newUser
+        print("📝 用户资料数据已准备完成")
+        print("🔄 尝试将用户资料保存到 Supabase...")
         
-        // 当Supabase包正确安装后，启用以下代码：
-        /*
         do {
             try await SupabaseManager.shared.client
                 .from("profiles")
                 .insert(newUser, returning: .minimal)
                 .execute()
             
+            print("✅ 成功创建用户资料到数据库")
             self.user = newUser
-            print("Successfully created new user profile.")
+            print("🎉 新用户资料创建完成")
         } catch {
-            print("Error creating user profile: \(error)")
+            print("❌ 创建用户资料失败: \(error)")
+            print("❌ 错误详情: \(error.localizedDescription)")
+            print("🔄 使用临时实现：仅设置本地用户数据")
+            // 如果数据库操作失败，至少设置本地数据，避免应用卡住
+            self.user = newUser
         }
-        */
     }
     
     func createDefaultUserProfile() async {
@@ -111,27 +126,40 @@ class UserDataViewModel: ObservableObject {
     }
     
     func updateUserProfile() async {
-        guard user != nil else { return }
-        
-        // 临时实现：打印更新信息
-        print("临时实现：用户数据已更新（本地）")
-        
-        // 当Supabase包正确安装后，启用以下代码：
-        /*
         guard let userToUpdate = user else { return }
         
-        print("Attempting to update user profile in Supabase...")
+        print("📝 准备更新用户资料...")
+        print("🆔 用户ID: \(userToUpdate.id)")
+        print("👤 用户姓名: \(userToUpdate.name)")
+        
         do {
             try await SupabaseManager.shared.client
                 .from("profiles")
                 .update(userToUpdate, returning: .minimal)
                 .eq("id", value: userToUpdate.id)
                 .execute()
-            print("Successfully updated user profile.")
+            print("✅ 成功更新用户资料到数据库")
         } catch {
-            print("Error updating user profile: \(error)")
+            print("❌ 更新用户资料失败: \(error)")
+            print("❌ 错误详情: \(error.localizedDescription)")
+            // 即使数据库更新失败，本地数据已经更新，保持应用可用性
         }
-        */
+    }
+    
+    // 新增：专门用于更新个人信息的方法
+    func updatePersonalInfo(name: String?, age: Int?, heightCM: Double?, weightKG: Double?, customTitle: String? = nil, avatarURL: String? = nil) async {
+        guard user != nil else { return }
+        
+        // 更新本地数据
+        if let name = name { user?.name = name }
+        if let age = age { user?.age = age }
+        if let height = heightCM { user?.heightCM = height }
+        if let weight = weightKG { user?.weightKG = weight }
+        if let title = customTitle { user?.customTitle = title }
+        if let avatarURL = avatarURL { user?.avatarURL = avatarURL }
+        
+        // 同步到云端
+        await updateUserProfile()
     }
     
     // --- 本地游戏化逻辑 (会触发云端同步) ---

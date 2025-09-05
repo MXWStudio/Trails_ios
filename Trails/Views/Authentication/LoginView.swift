@@ -1,6 +1,34 @@
 import SwiftUI
 import AuthenticationServices
 
+// 超时工具扩展
+func withTimeout<T>(
+    seconds: TimeInterval,
+    operation: @escaping () async throws -> T
+) async throws -> T {
+    try await withThrowingTaskGroup(of: T.self) { group in
+        // 添加主要操作
+        group.addTask {
+            try await operation()
+        }
+        
+        // 添加超时任务
+        group.addTask {
+            try await Task.sleep(for: .seconds(seconds))
+            throw TimeoutError()
+        }
+        
+        // 返回第一个完成的任务结果
+        let result = try await group.next()!
+        group.cancelAll()
+        return result
+    }
+}
+
+struct TimeoutError: Error {
+    let localizedDescription = "操作超时"
+}
+
 // 登录视图
 struct LoginView: View {
     // 从环境中获取认证视图模型
@@ -182,13 +210,32 @@ struct EmailLoginView: View {
                 // 登录/注册按钮
                 Button(action: {
                     Task {
-                        if isSignUp {
-                            await authViewModel.signUpWithEmail(email: email, password: password)
-                        } else {
-                            await authViewModel.signInWithEmail(email: email, password: password)
-                        }
-                        if authViewModel.isUserAuthenticated {
-                            presentationMode.wrappedValue.dismiss()
+                        print("🔘 用户点击登录按钮")
+                        
+                        do {
+                            // 使用withTimeout实现超时机制
+                            try await withTimeout(seconds: 30) {
+                                if isSignUp {
+                                    print("📝 执行注册流程")
+                                    await authViewModel.signUpWithEmail(email: email, password: password)
+                                } else {
+                                    print("🔐 执行登录流程")
+                                    await authViewModel.signInWithEmail(email: email, password: password)
+                                }
+                            }
+                            
+                            if authViewModel.isUserAuthenticated {
+                                print("✅ 登录成功，关闭登录页面")
+                                presentationMode.wrappedValue.dismiss()
+                            }
+                        } catch {
+                            print("⏰ 登录超时或失败")
+                            await MainActor.run {
+                                if authViewModel.isLoading {
+                                    authViewModel.isLoading = false
+                                    authViewModel.errorMessage = "登录超时，请检查网络连接后重试"
+                                }
+                            }
                         }
                     }
                 }) {
@@ -221,6 +268,21 @@ struct EmailLoginView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
                         .padding(.top, 10)
+                    
+                    // 如果是邮箱未确认错误，显示重新发送按钮
+                    if errorMessage.contains("邮箱未确认") {
+                        Button(action: {
+                            Task {
+                                await authViewModel.resendConfirmationEmail(email: email)
+                            }
+                        }) {
+                            Text("重新发送确认邮件")
+                                .font(.footnote)
+                                .foregroundColor(.blue)
+                                .padding(.top, 5)
+                        }
+                        .disabled(authViewModel.isLoading)
+                    }
                 }
                 
                 if authViewModel.isLoading {
