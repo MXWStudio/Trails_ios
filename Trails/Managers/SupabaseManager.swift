@@ -1,5 +1,7 @@
 import Foundation
 import Supabase
+import SwiftUI
+import PhotosUI
 
 class SupabaseManager {
     static let shared = SupabaseManager()
@@ -16,7 +18,26 @@ class SupabaseManager {
         print("🔧 Supabase 客户端已初始化")
         print("🌐 Supabase URL: \(supabaseURL)")
     }
-    
+        // 新增：上传头像到 Supabase Storage 的方法
+    func uploadAvatar(userId: UUID, image: UIImage) async throws -> String {
+        guard let imageData = image.jpegData(compressionQuality: 0.5) else {
+            throw NSError(domain: "ImageConversionError", code: 0, userInfo: [NSLocalizedDescriptionKey: "无法将图片转换为JPEG数据"])
+        }
+        
+        let filePath = "\(userId.uuidString).jpg"
+        
+        // 上传文件，如果已存在则覆盖
+        _ = try await client.storage
+            .from("avatars")
+            .upload(filePath, data: imageData, options: FileOptions(cacheControl: "3600", upsert: true))
+        
+        // 获取上传后文件的公开URL
+        let response = try client.storage
+            .from("avatars")
+            .getPublicURL(path: filePath)
+        
+        return response.absoluteString
+    }
     // 测试网络连接和 Supabase 配置
     func testConnection() async -> Bool {
         print("🧪 开始测试 Supabase 连接...")

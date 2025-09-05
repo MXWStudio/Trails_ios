@@ -2,10 +2,10 @@ import Foundation
 
 // "第一次"记录的数据模型
 struct UserFirstRecord: Identifiable, Codable {
-    let id = UUID()
-    let title: String
-    let date: String
-    let icon: String
+    var id: UUID = UUID()
+    var title: String
+    var date: String
+    var icon: String
 }
 
 // 小队数据模型

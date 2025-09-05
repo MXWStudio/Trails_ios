@@ -272,9 +272,8 @@ struct EmailLoginView: View {
                     // 如果是邮箱未确认错误，显示重新发送按钮
                     if errorMessage.contains("邮箱未确认") {
                         Button(action: {
-                            Task {
-                                await authViewModel.resendConfirmationEmail(email: email)
-                            }
+                            // TODO: 实现重新发送确认邮件功能
+                            print("重新发送确认邮件功能待实现")
                         }) {
                             Text("重新发送确认邮件")
                                 .font(.footnote)

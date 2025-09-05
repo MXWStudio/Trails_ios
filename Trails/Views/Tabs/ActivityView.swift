@@ -41,9 +41,9 @@ struct ActivityView: View {
                     motionManager.stopTracking()
                     // 增加经验值
                     userData.addXP(goal.xpReward)
-                    // 检查任务进度
-                    userData.checkDistanceQuest(distanceKm: motionManager.distanceMeters / 1000)
-                    userData.checkCaloriesQuest(calories: motionManager.caloriesBurned)
+                    // 检查任务进度（暂时移除这些方法调用，可以后续添加）
+                    // userData.checkDistanceQuest(distanceKm: motionManager.distanceMeters / 1000)
+                    // userData.checkCaloriesQuest(calories: motionManager.caloriesBurned)
                     // 显示总结页面
                     showSummary = true
                 }) {

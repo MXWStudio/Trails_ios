@@ -57,3 +57,4 @@ enum Intensity: String, Codable, CaseIterable, Identifiable {
     
     var id: String { self.rawValue }
 }
+

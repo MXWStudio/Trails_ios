@@ -2,11 +2,6 @@ import SwiftUI
 import AuthenticationServices
 import Supabase
 
-// 通知名称扩展
-extension Notification.Name {
-    static let userDidAuthenticate = Notification.Name("userDidAuthenticate")
-}
-
 @MainActor
 class AuthenticationViewModel: ObservableObject {
     @Published var isUserAuthenticated = false
@@ -63,10 +58,7 @@ class AuthenticationViewModel: ObservableObject {
                 credentials: .init(provider: .apple, idToken: idToken)
             )
             self.isLoading = false
-            self.isUserAuthenticated = true
-            
-            // 登录成功后，尝试获取或创建用户资料
-            NotificationCenter.default.post(name: .userDidAuthenticate, object: nil)
+            onLoginSuccess()
         } catch {
             self.errorMessage = "Supabase 登录失败: \(error.localizedDescription)"
             self.isLoading = false
@@ -86,49 +78,22 @@ class AuthenticationViewModel: ObservableObject {
     // --- Email 登录功能 ---
     
     func signInWithEmail(email: String, password: String) async {
-        print("🔐 开始邮箱登录流程，邮箱: \(email)")
         self.isLoading = true
         self.errorMessage = nil
         
-        // 先测试网络连接（现在修改为更宽松的检查）
-        print("🔍 开始网络和配置检查...")
-        let connectionOK = await SupabaseManager.shared.testConnection()
-        if !connectionOK {
-            print("⚠️ 网络预检查失败，但继续尝试直接认证...")
-            // 不再直接返回，而是继续尝试认证
-        }
-        
-        // 检查数据库表（也改为更宽松的检查）
-        let tableOK = await SupabaseManager.shared.checkProfilesTable()
-        if !tableOK {
-            print("⚠️ profiles 表检查失败，但继续尝试登录")
-        }
-        
         do {
-            print("🌐 正在连接 Supabase 进行认证...")
-            let response = try await SupabaseManager.shared.client.auth.signIn(
+            try await SupabaseManager.shared.client.auth.signIn(
                 email: email,
                 password: password
             )
-            print("✅ Supabase 认证成功，用户ID: \(response.user.id)")
-            
             self.isLoading = false
-            self.isUserAuthenticated = true
-            
-            // 登录成功后，尝试获取或创建用户资料
-            print("📢 发送用户认证成功通知")
-            NotificationCenter.default.post(name: .userDidAuthenticate, object: nil)
-            print("🎉 邮箱登录流程完成")
+            onLoginSuccess()
         } catch {
-            print("❌ 邮箱登录失败: \(error)")
-            print("❌ 错误详情: \(error.localizedDescription)")
-            
-            // 提供更友好的错误信息
             let friendlyMessage: String
             if error.localizedDescription.contains("Invalid login credentials") {
                 friendlyMessage = "邮箱或密码不正确，请检查后重试"
             } else if error.localizedDescription.contains("Email not confirmed") {
-                friendlyMessage = "邮箱未确认，请检查您的邮箱并点击确认链接，或联系管理员手动确认"
+                friendlyMessage = "邮箱未确认，请检查您的邮箱并点击确认链接"
             } else if error.localizedDescription.contains("network") || error.localizedDescription.contains("timeout") {
                 friendlyMessage = "网络连接超时，请检查网络后重试"
             } else {
@@ -150,32 +115,17 @@ class AuthenticationViewModel: ObservableObject {
                 password: password
             )
             self.isLoading = false
-            self.isUserAuthenticated = true
-            
-            // 注册成功后，尝试获取或创建用户资料
-            NotificationCenter.default.post(name: .userDidAuthenticate, object: nil)
+            onLoginSuccess()
         } catch {
             self.errorMessage = "邮箱注册失败: \(error.localizedDescription)"
             self.isLoading = false
         }
     }
     
-    // 重新发送确认邮件
-    func resendConfirmationEmail(email: String) async {
-        self.isLoading = true
-        self.errorMessage = nil
-        
-        do {
-            try await SupabaseManager.shared.client.auth.resend(
-                email: email,
-                type: .signup
-            )
-            self.isLoading = false
-            self.errorMessage = "确认邮件已重新发送，请检查您的邮箱"
-        } catch {
-            self.errorMessage = "重新发送邮件失败: \(error.localizedDescription)"
-            self.isLoading = false
-        }
+    // 登录成功后的统一处理
+    private func onLoginSuccess() {
+        self.isUserAuthenticated = true
+        NotificationCenter.default.post(name: .userDidAuthenticate, object: nil)
     }
     
     // --- 开发者功能 ---
@@ -183,5 +133,7 @@ class AuthenticationViewModel: ObservableObject {
     // 模拟器跳过登录
     func simulatorLogin() {
         self.isUserAuthenticated = true
+        // 模拟器也需要发送通知来加载数据
+        NotificationCenter.default.post(name: .userDidAuthenticate, object: nil)
     }
 }

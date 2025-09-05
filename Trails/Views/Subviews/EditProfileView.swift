@@ -207,9 +207,7 @@ struct EditProfileView: View {
         userDataVM.user!.favoriteActivities = ActivityType.allCases.filter { selectedActivities.contains($0) }
         
         // 触发云端同步
-        Task {
-            await userDataVM.updateUserProfile()
-        }
+        userDataVM.saveChanges()
         
         print("💾 保存用户数据：")
         print("👤 姓名: \(userDataVM.user!.name)")
