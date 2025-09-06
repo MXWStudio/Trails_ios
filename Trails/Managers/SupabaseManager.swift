@@ -112,4 +112,26 @@ class SupabaseManager {
             return false
         }
     }
+    
+    // 🆕 检查 activities 表是否存在
+    func checkActivitiesTable() async -> Bool {
+        print("🗄️ 检查 activities 表是否存在...")
+        
+        do {
+            // 尝试查询 activities 表，限制结果为0条，只是测试表是否存在
+            _ = try await client
+                .from("activities")
+                .select("id")
+                .limit(0)
+                .execute()
+            
+            print("✅ activities 表检查通过")
+            return true
+        } catch {
+            print("❌ activities 表检查失败: \(error)")
+            print("❌ 可能的原因：表不存在、权限不足或网络问题")
+            print("💡 请确保已经在 Supabase 中创建了 activities 表")
+            return false
+        }
+    }
 }

@@ -25,7 +25,47 @@ class UserDataViewModel: ObservableObject {
             }
         }
     }
-    
+}
+
+extension UserDataViewModel {
+    func saveActivityRecord(_ record: ActivityRecord) async {
+        print("💾 准备保存运动记录到 Supabase...")
+        print("📊 运动数据：类型=\(record.activity_type), 距离=\(String(format: "%.1f", record.distance_meters))米, 时长=\(record.duration_seconds)秒")
+        print("🗺️ 轨迹点数量：\(record.route.count) 个坐标点")
+        
+        // 首先检查 activities 表是否存在
+        let tableExists = await SupabaseManager.shared.checkActivitiesTable()
+        if !tableExists {
+            print("❌ activities 表不存在，无法保存运动记录")
+            print("💡 请先在 Supabase 中执行 activities_table.sql 脚本创建表")
+            return
+        }
+        
+        do {
+            let response = try await SupabaseManager.shared.client
+                .from("activities")
+                .insert(record, returning: .minimal)
+                .execute()
+            
+            print("✅ 运动记录成功保存到 Supabase！")
+            print("📄 响应状态：\(response.status)")
+            
+        } catch {
+            print("❌ 保存运动记录失败: \(error)")
+            
+            // 详细的错误信息
+            if let description = error as? LocalizedError {
+                print("❌ 错误详情: \(description.errorDescription ?? "未知错误")")
+            }
+            
+            // 检查是否是网络问题
+            if error.localizedDescription.contains("网络") || error.localizedDescription.contains("network") {
+                print("🌐 可能是网络连接问题，建议稍后重试")
+            }
+        }
+    }
+
+
     // --- Supabase 数据交互 ---
     
     func fetchCurrentUserProfile() async {
@@ -165,5 +205,56 @@ class UserDataViewModel: ObservableObject {
         saveChanges()
         
         print("✅ 添加了 \(amount) 金币，当前总金币：\(currentUser.coins)")
+    }
+    
+    // --- 每日任务检查方法 ---
+    
+    func checkDistanceQuest(distanceKm: Double) {
+        // 检查距离相关的每日任务
+        for i in 0..<dailyQuests.count {
+            if dailyQuests[i].title.contains("公里") && dailyQuests[i].progress < dailyQuests[i].target {
+                let completedRuns = Int(distanceKm >= 2.0 ? 1 : 0) // 如果跑了2公里以上，完成1次任务
+                let newProgress = min(dailyQuests[i].progress + completedRuns, dailyQuests[i].target)
+                dailyQuests[i].progress = newProgress
+                
+                if newProgress == dailyQuests[i].target {
+                    // 任务完成，奖励金币
+                    addCoins(dailyQuests[i].rewardCoins)
+                    print("🎉 每日任务完成：\(dailyQuests[i].title)")
+                }
+            }
+        }
+    }
+    
+    func checkCaloriesQuest(calories: Double) {
+        // 检查卡路里相关的每日任务
+        for i in 0..<dailyQuests.count {
+            if dailyQuests[i].title.contains("大卡") && dailyQuests[i].progress < dailyQuests[i].target {
+                let newProgress = min(dailyQuests[i].progress + Int(calories), dailyQuests[i].target)
+                dailyQuests[i].progress = newProgress
+                
+                if newProgress == dailyQuests[i].target {
+                    // 任务完成，奖励金币
+                    addCoins(dailyQuests[i].rewardCoins)
+                    print("🎉 每日任务完成：\(dailyQuests[i].title)")
+                }
+            }
+        }
+    }
+    
+    func checkExperienceQuest(xp: Int) {
+        // 检查经验值相关的每日任务
+        for i in 0..<dailyQuests.count {
+            if dailyQuests[i].title.contains("经验") && dailyQuests[i].progress < dailyQuests[i].target {
+                let newProgress = min(dailyQuests[i].progress + xp, dailyQuests[i].target)
+                dailyQuests[i].progress = newProgress
+                
+                if newProgress == dailyQuests[i].target {
+                    // 任务完成，奖励金币
+                    addCoins(dailyQuests[i].rewardCoins)
+                    print("🎉 每日任务完成：\(dailyQuests[i].title)")
+                }
+            }
+        }
     }
 }

@@ -109,7 +109,7 @@ struct ActivityDetailView: View {
             }
             .padding()
             .fullScreenCover(isPresented: $showActivityView) {
-                ActivityView(goal: goal)
+                ActivityView(goal: goal, activityType: activity)
             }
             , alignment: .bottom
         )

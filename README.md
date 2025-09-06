@@ -856,6 +856,158 @@ PostCardView (展示 + 状态绑定)
 
 这次更新完善了个人资料系统，让用户能够管理完整的个人信息，为后续的健康数据分析和个性化推荐功能奠定了基础。
 
+## 🆕 最新重大更新 - 运动轨迹记录系统 (2025.1.16)
+
+### 🏃‍♂️ 运动数据追踪和云端存储
+
+#### 核心功能
+- **GPS 轨迹记录**: 完整记录运动过程中的 GPS 坐标点
+- **运动数据收集**: 距离、时长、卡路里、运动类型
+- **云端数据存储**: 使用 Supabase 存储运动记录和轨迹数据
+- **数据同步**: 实时将运动数据同步到云端数据库
+
+#### 数据结构设计
+```swift
+struct ActivityRecord: Codable {
+    var id: UUID? = nil           // 自动生成的记录ID
+    let user_id: UUID             // 用户ID
+    let activity_type: String     // 运动类型（跑步、骑行、徒步、羽毛球）
+    let distance_meters: Double   // 距离（米）
+    let duration_seconds: Int     // 持续时间（秒）
+    let calories_burned: Double   // 燃烧卡路里
+    let route: [Coordinate]       // GPS轨迹数组
+}
+
+struct Coordinate: Codable {
+    let latitude: Double          // 纬度
+    let longitude: Double         // 经度
+}
+```
+
+#### 技术实现亮点
+
+##### 1. 🗺️ GPS 轨迹追踪系统
+- **LocationManager 增强**: 
+  - 新增 `route: [CLLocation]` 数组存储完整轨迹
+  - GPS 精度过滤（排除精度大于10米的点）
+  - 实时轨迹记录和距离计算
+  - 调试日志输出，便于开发调试
+
+```swift
+// LocationManager 核心改进
+@Published var route: [CLLocation] = []
+
+func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    // GPS精度过滤
+    guard newLocation.horizontalAccuracy <= 10.0 && newLocation.horizontalAccuracy > 0 else {
+        return
+    }
+    
+    // 添加到轨迹数组
+    route.append(newLocation)
+    
+    // 计算距离增量
+    if let previousLocation = previousLocation {
+        totalDistance += newLocation.distance(from: previousLocation)
+    }
+}
+```
+
+##### 2. 🔄 数据流整合
+- **MotionManager 访问接口**: 通过 `var route: [CLLocation]` 暴露轨迹数据
+- **坐标转换**: CLLocation → Coordinate 的无缝转换
+- **异步数据保存**: Task + async/await 确保 UI 响应性
+
+##### 3. 🗄️ Supabase 数据库集成
+- **activities 表结构**: 
+  - 主键自动生成（UUID）
+  - 用户关联（外键约束）
+  - 轨迹存储（JSONB 格式）
+  - 索引优化（用户、类型、时间）
+  - 自动时间戳更新
+
+```sql
+CREATE TABLE activities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    activity_type TEXT NOT NULL,
+    distance_meters DECIMAL NOT NULL,
+    duration_seconds INTEGER NOT NULL,
+    calories_burned DECIMAL NOT NULL,
+    route JSONB NOT NULL DEFAULT '[]',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+##### 4. 🎮 游戏化系统集成
+- **经验值奖励**: 完成运动自动获得 XP
+- **每日任务检查**: 
+  - 距离任务（2公里以上跑步）
+  - 卡路里任务（燃烧300大卡）
+  - 经验任务（赚取100经验）
+- **金币奖励**: 完成任务自动获得金币
+- **实时更新**: 本地更新后自动同步云端
+
+#### 完整数据流程
+```
+用户开始运动
+    ↓
+LocationManager.startUpdating()
+    ↓
+GPS 坐标点实时收集 → route: [CLLocation]
+    ↓
+MotionManager 计算距离、时长、卡路里
+    ↓
+用户点击"结束运动"
+    ↓
+handleFinishActivity() async
+    ↓
+1. 停止 GPS 追踪
+2. 转换坐标格式 [CLLocation] → [Coordinate]
+3. 创建 ActivityRecord 对象
+4. 保存到 Supabase activities 表
+5. 更新游戏化数据（XP、任务、金币）
+6. 云端同步用户数据
+7. 显示运动总结
+```
+
+#### 错误处理和调试
+- **表存在性检查**: 自动检测 activities 表是否创建
+- **网络错误处理**: 详细的错误日志和用户提示
+- **GPS 精度过滤**: 自动排除低精度坐标点
+- **数据验证**: 确保所有必需字段完整
+- **调试日志**: 完整的日志输出便于问题排查
+
+#### 文件结构更新
+```
+新增文件：
+- Trails/Models/ActivityRecord.swift     # 运动记录数据模型
+- activities_table.sql                   # 数据库表创建脚本
+
+修改文件：
+- Trails/Managers/LocationManager.swift  # 新增轨迹记录功能
+- Trails/Managers/MotionManager.swift    # 新增轨迹访问接口
+- Trails/Views/Tabs/ActivityView.swift   # 新增异步数据保存逻辑
+- Trails/ViewModels/UserDataViewModel.swift # 新增运动记录保存和任务检查
+- Trails/Managers/SupabaseManager.swift  # 新增 activities 表检查方法
+```
+
+### 🎯 用户体验提升
+- **完整的运动记录**: 从开始到结束的完整数据收集
+- **云端数据安全**: 所有运动数据安全存储在 Supabase
+- **游戏化激励**: 完成运动立即获得奖励反馈
+- **足迹地图基础**: 为未来的足迹地图功能准备了完整的轨迹数据
+- **跨设备同步**: 运动记录可在不同设备间同步访问
+
+### 🔮 未来扩展可能
+- **轨迹可视化**: 在地图上显示运动路线
+- **运动分析**: 基于历史数据的运动分析和建议
+- **社交分享**: 分享运动轨迹和成绩到社区
+- **挑战系统**: 基于距离和路线的挑战功能
+- **个人记录**: 各项运动的个人最佳记录追踪
+
+这次更新将 Trails 的运动追踪功能从基础的数据显示升级为完整的数据收集、存储和分析系统，为构建一个专业级的运动应用奠定了坚实的基础。
+
 ---
 
 *简洁、现代、功能完整的 iOS 应用基础架构*

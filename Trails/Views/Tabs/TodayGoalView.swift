@@ -128,7 +128,7 @@ struct TodayGoalView: View {
                 .padding(.bottom, 20)
                 .fullScreenCover(isPresented: $showActivityView) {
                     // 点击按钮后，传入当前卡片对应的运动目标
-                    ActivityView(goal: dailyGoal)
+                    ActivityView(goal: dailyGoal, activityType: currentActivity)
                 }
                 , alignment: .bottom
             )

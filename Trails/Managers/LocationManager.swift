@@ -16,6 +16,9 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // 存储上一个位置点，用于计算距离增量
     private var previousLocation: CLLocation?
+    
+    // 🆕 存储完整的运动轨迹（GPS坐标点数组）
+    @Published var route: [CLLocation] = []
 
     override init() {
         super.init()
@@ -46,6 +49,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         totalDistance = 0.0
         previousLocation = nil
         lastKnownLocation = nil
+        route = [] // 🆕 重置轨迹数组
         
         locationManager.startUpdatingLocation()
     }
@@ -60,12 +64,26 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // 当位置更新时被调用
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let newLocation = locations.last else { return }
+        
+        // 过滤掉精度较差的位置点（水平精度大于10米的点）
+        guard newLocation.horizontalAccuracy <= 10.0 && newLocation.horizontalAccuracy > 0 else {
+            print("⚠️ GPS精度较差，跳过此位置点: \(newLocation.horizontalAccuracy)米")
+            return
+        }
+        
         self.lastKnownLocation = newLocation
+        
+        // 🆕 将新位置点添加到轨迹数组中
+        route.append(newLocation)
         
         // 如果有上一个点，就计算距离并累加
         if let previousLocation = previousLocation {
             let distanceIncrement = newLocation.distance(from: previousLocation)
             totalDistance += distanceIncrement
+            
+            // 打印调试信息
+            print("📍 新增GPS点: \(newLocation.coordinate.latitude), \(newLocation.coordinate.longitude)")
+            print("📏 距离增量: \(String(format: "%.1f", distanceIncrement))米, 总距离: \(String(format: "%.1f", totalDistance))米")
         }
         
         // 更新上一个点
