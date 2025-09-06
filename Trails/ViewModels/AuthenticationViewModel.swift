@@ -10,16 +10,23 @@ class AuthenticationViewModel: ObservableObject {
     
     // --- 认证流程 ---
     
-    // App 启动时自动检查登录状态
+    // App 启动时检查用户会话，实现自动登录
     func checkUserSession() async {
         do {
+            // 尝试从 Supabase 获取当前会话
             _ = try await SupabaseManager.shared.client.auth.session
+            // 如果成功，说明用户已登录
             self.isUserAuthenticated = true
+            // 发送通知，让 UserDataViewModel 开始获取数据
+            NotificationCenter.default.post(name: .userDidAuthenticate, object: nil)
+            print("✅ 用户会话有效，自动登录成功。")
         } catch {
+            // 如果失败，说明用户未登录
             self.isUserAuthenticated = false
+            print("ℹ️ 无有效用户会话，需要登录。")
         }
     }
-    
+
     // 处理来自 SwiftUI 按钮的结果
     func handleSignInWithApple(result: Result<ASAuthorization, Error>) {
         self.isLoading = true
@@ -70,6 +77,10 @@ class AuthenticationViewModel: ObservableObject {
         do {
             try await SupabaseManager.shared.client.auth.signOut()
             self.isUserAuthenticated = false
+            
+            // 通知清除用户数据
+            NotificationCenter.default.post(name: .userDidSignOut, object: nil)
+            
         } catch {
             self.errorMessage = "退出登录失败: \(error.localizedDescription)"
         }

@@ -168,6 +168,7 @@ struct EditProfileView: View {
         }
     }
     
+    
     // MARK: - 辅助方法
     
     private func loadUserData() {
@@ -190,31 +191,35 @@ struct EditProfileView: View {
     private func saveUserData() {
         guard userDataVM.user != nil else { return }
         
-        // 保存个人信息
-        userDataVM.user!.name = editedName.isEmpty ? userDataVM.user!.name : editedName
-        userDataVM.user!.age = Int(editedAge)
-        userDataVM.user!.heightCM = Double(editedHeight)
-        userDataVM.user!.weightKG = Double(editedWeight) ?? userDataVM.user!.weightKG
-        userDataVM.user!.customTitle = editedCustomTitle.isEmpty ? nil : editedCustomTitle
-        
-        // 如果选择了新头像，设置头像URL并更新回调
-        if let selectedAvatar = avatarImage {
-            userDataVM.user!.avatarURL = "local_avatar_\(UUID().uuidString)"
-            onAvatarUpdated?(selectedAvatar)
+        // 使用 Task 来执行异步的保存操作
+        Task {
+            // 1. 先更新本地 ViewModel 中的数据
+            userDataVM.user?.name = editedName.isEmpty ? userDataVM.user?.name ?? "新用户" : editedName
+            userDataVM.user?.age = Int(editedAge)
+            userDataVM.user?.heightCM = Double(editedHeight)
+            userDataVM.user?.weightKG = Double(editedWeight) ?? userDataVM.user?.weightKG ?? 70.0
+            userDataVM.user?.customTitle = editedCustomTitle.isEmpty ? nil : editedCustomTitle
+            
+            // 如果选择了新头像，设置头像URL并更新回调
+            if let selectedAvatar = avatarImage {
+                userDataVM.user?.avatarURL = "local_avatar_\(UUID().uuidString)"
+                onAvatarUpdated?(selectedAvatar)
+            }
+            
+            // 保存运动偏好
+            userDataVM.user?.favoriteActivities = ActivityType.allCases.filter { selectedActivities.contains($0) }
+            
+            // 2. 调用自动保存方法，将所有改动同步到云端
+            await userDataVM.updateUserProfile()
+            
+            print("💾 用户数据已保存：")
+            print("👤 姓名: \(userDataVM.user?.name ?? "未知")")
+            print("🎂 年龄: \(userDataVM.user?.age ?? 0)")
+            print("📏 身高: \(userDataVM.user?.heightCM ?? 0)")
+            print("⚖️ 体重: \(userDataVM.user?.weightKG ?? 0)")
+            print("🏷️ 称号: \(userDataVM.user?.customTitle ?? "无")")
+            print("💾 数据已保存到本地缓存并尝试同步到云端")
         }
-        
-        // 保存运动偏好
-        userDataVM.user!.favoriteActivities = ActivityType.allCases.filter { selectedActivities.contains($0) }
-        
-        // 触发云端同步
-        userDataVM.saveChanges()
-        
-        print("💾 保存用户数据：")
-        print("👤 姓名: \(userDataVM.user!.name)")
-        print("🎂 年龄: \(userDataVM.user!.age ?? 0)")
-        print("📏 身高: \(userDataVM.user!.heightCM ?? 0)")
-        print("⚖️ 体重: \(userDataVM.user!.weightKG)")
-        print("🏷️ 称号: \(userDataVM.user!.customTitle ?? "无")")
     }
     
     @MainActor

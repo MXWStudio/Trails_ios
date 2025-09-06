@@ -4,6 +4,8 @@ import Foundation
 @MainActor // 确保所有对 @Published 属性的修改都在主线程上
 class UserDataViewModel: ObservableObject {
     @Published var user: UserData?
+    @Published var isLoadingUserData = false
+    @Published var isDataFromCache = false // 标记数据是否来自缓存
     
     // 本地管理的游戏化数据 (未来也可以从 Supabase 加载)
     @Published var achievements: [Achievement] = [] // Achievement.sampleAchievements
@@ -14,6 +16,9 @@ class UserDataViewModel: ObservableObject {
     ]
     
     init() {
+        // 应用启动时先加载本地缓存的用户数据
+        loadUserDataFromCache()
+        
         // 监听用户认证成功的通知
         NotificationCenter.default.addObserver(
             forName: .userDidAuthenticate,
@@ -21,8 +26,36 @@ class UserDataViewModel: ObservableObject {
             queue: .main
         ) { _ in
             Task {
-                await self.fetchCurrentUserProfile()
+                await self.smartFetchUserProfile()
             }
+        }
+        
+        // 监听应用进入后台和前台的通知
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            self.saveUserDataToCache()
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            Task {
+                await self.syncDataIfNeeded()
+            }
+        }
+        
+        // 监听用户登出通知
+        NotificationCenter.default.addObserver(
+            forName: .userDidSignOut,
+            object: nil,
+            queue: .main
+        ) { _ in
+            self.clearUserData()
         }
     }
 }
@@ -66,12 +99,60 @@ extension UserDataViewModel {
     }
 
 
+    // --- 智能数据同步和缓存管理 ---
+    
+    /// 从本地缓存加载用户数据
+    func loadUserDataFromCache() {
+        if let cachedUser = LocalStorageManager.shared.loadUserData() {
+            self.user = cachedUser
+            self.isDataFromCache = true
+            print("✅ 已从本地缓存加载用户数据")
+        }
+    }
+    
+    /// 保存用户数据到本地缓存
+    func saveUserDataToCache() {
+        guard let currentUser = user else { return }
+        LocalStorageManager.shared.saveUserData(currentUser)
+    }
+    
+    /// 智能获取用户资料（优先使用缓存，按需同步云端）
+    func smartFetchUserProfile() async {
+        guard let currentUserID = try? await SupabaseManager.shared.client.auth.session.user.id else {
+            return
+        }
+        
+        // 如果本地没有数据，或者需要同步，则从云端获取
+        if user == nil || LocalStorageManager.shared.shouldSyncWithCloud() {
+            await fetchCurrentUserProfile()
+        } else {
+            print("ℹ️ 使用本地缓存数据，跳过云端同步")
+        }
+    }
+    
+    /// 检查是否需要同步数据
+    func syncDataIfNeeded() async {
+        // 检查是否有待同步的更改
+        if LocalStorageManager.shared.hasPendingChanges() {
+            print("🔄 检测到待同步的更改，正在同步...")
+            await updateUserProfile()
+        }
+        
+        // 检查是否需要从云端获取最新数据
+        if LocalStorageManager.shared.shouldSyncWithCloud() {
+            print("🔄 数据较旧，从云端同步最新数据...")
+            await fetchCurrentUserProfile()
+        }
+    }
+    
     // --- Supabase 数据交互 ---
     
     func fetchCurrentUserProfile() async {
         guard let currentUserID = try? await SupabaseManager.shared.client.auth.session.user.id else {
             return
         }
+        
+        self.isLoadingUserData = true
         
         do {
             let profile: UserData = try await SupabaseManager.shared.client
@@ -83,10 +164,20 @@ extension UserDataViewModel {
                 .value
                 
             self.user = profile
+            self.isDataFromCache = false
+            
+            // 保存到本地缓存
+            saveUserDataToCache()
+            
+            // 清除待同步的更改（因为已经获取到最新数据）
+            LocalStorageManager.shared.clearPendingChanges()
+            
         } catch {
             // 如果用户资料不存在，创建一个新的
             await createNewUserProfile(userID: currentUserID)
         }
+        
+        self.isLoadingUserData = false
     }
     
     func createNewUserProfile(userID: UUID) async {
@@ -185,8 +276,11 @@ extension UserDataViewModel {
         currentUser.totalXP += amount
         self.user = currentUser
         
+        // 检查经验相关的每日任务
+        checkExperienceQuest(xp: amount)
+        
         // 异步保存到云端
-        saveChanges()
+        Task { await updateUserProfile() }
         
         print("✅ 添加了 \(amount) 经验，当前总经验：\(currentUser.totalXP)")
     }
@@ -202,7 +296,7 @@ extension UserDataViewModel {
         self.user = currentUser
         
         // 异步保存到云端
-        saveChanges()
+        Task { await updateUserProfile() }
         
         print("✅ 添加了 \(amount) 金币，当前总金币：\(currentUser.coins)")
     }
@@ -256,5 +350,58 @@ extension UserDataViewModel {
                 }
             }
         }
+    }
+}
+
+// MARK: - 自动保存功能扩展
+extension UserDataViewModel {
+    // 修改：智能保存，支持离线模式
+    func updateUserProfile() async {
+        guard let userToUpdate = user else {
+            print("⚠️ 尝试更新用户资料，但本地无数据。")
+            return
+        }
+        
+        // 1. 立即保存到本地缓存
+        saveUserDataToCache()
+        
+        // 2. 尝试同步到云端
+        print("💾 正在将本地用户资料同步到 Supabase...")
+        do {
+            try await SupabaseManager.shared.client
+                .from("profiles")
+                .update(userToUpdate)
+                .eq("id", value: userToUpdate.id)
+                .execute()
+            print("✅ 用户资料成功同步到云端！")
+            
+            // 同步成功，清除待同步标记
+            LocalStorageManager.shared.clearPendingChanges()
+            
+        } catch {
+            print("❌ 同步用户资料失败: \(error.localizedDescription)")
+            
+            // 网络失败时，保存待同步的更改
+            let pendingChanges: [String: Any] = [
+                "user_profile": true,
+                "last_attempt": Date().timeIntervalSince1970
+            ]
+            LocalStorageManager.shared.savePendingChanges(pendingChanges)
+            print("💾 已保存待同步的更改，将在网络恢复时重试")
+        }
+    }
+    
+    /// 强制从云端刷新数据（用于下拉刷新等场景）
+    func forceRefreshFromCloud() async {
+        print("🔄 强制从云端刷新用户数据...")
+        await fetchCurrentUserProfile()
+    }
+    
+    /// 清除用户数据（用于登出）
+    func clearUserData() {
+        self.user = nil
+        self.isDataFromCache = false
+        LocalStorageManager.shared.clearUserData()
+        print("🗑️ 已清除用户数据")
     }
 }
