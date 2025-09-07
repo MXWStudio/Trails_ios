@@ -46,7 +46,17 @@ struct ProfileView: View {
                     Text("离线模式 - 使用本地数据")
                         .font(.caption)
                         .foregroundColor(.orange)
+                    
+                    Spacer()
+                    
+                    Button("隐藏") {
+                        LocalStorageManager.shared.setHideOfflineMode(true)
+                        userDataVM.isDataFromCache = false
+                    }
+                    .font(.caption)
+                    .foregroundColor(.blue)
                 }
+                .padding(.horizontal)
                 .padding(.top, 10)
             }
             
@@ -248,6 +258,19 @@ struct ProfileView: View {
                         .foregroundColor(.white)
                         .cornerRadius(12)
                         .padding(.horizontal)
+                    
+                    // 离线模式设置按钮
+                    if LocalStorageManager.shared.isOfflineModeHidden() {
+                        Button("重新启用离线模式提示") {
+                            LocalStorageManager.shared.setHideOfflineMode(false)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.orange.opacity(0.1))
+                        .foregroundColor(.orange)
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                    }
                     
                     // 登出按钮
                     Button("退出登录") { showLogoutAlert = true }

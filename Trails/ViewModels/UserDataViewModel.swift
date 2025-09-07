@@ -105,8 +105,9 @@ extension UserDataViewModel {
     func loadUserDataFromCache() {
         if let cachedUser = LocalStorageManager.shared.loadUserData() {
             self.user = cachedUser
-            self.isDataFromCache = true
-            print("✅ 已从本地缓存加载用户数据")
+            // 只有在真正需要显示离线模式时才标记为缓存数据
+            self.isDataFromCache = LocalStorageManager.shared.shouldShowOfflineMode()
+            print("✅ 已从本地缓存加载用户数据，离线模式：\(self.isDataFromCache)")
         }
     }
     
@@ -127,6 +128,8 @@ extension UserDataViewModel {
             await fetchCurrentUserProfile()
         } else {
             print("ℹ️ 使用本地缓存数据，跳过云端同步")
+            // 使用缓存数据时，更新离线状态标记
+            self.isDataFromCache = LocalStorageManager.shared.shouldShowOfflineMode()
         }
     }
     
