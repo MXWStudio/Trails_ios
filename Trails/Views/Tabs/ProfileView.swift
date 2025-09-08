@@ -64,6 +64,8 @@ struct ProfileView: View {
             VStack(spacing: 20) {
                 // 顶部蓝色背景
                 VStack {
+                    
+                    
                     // 头像显示 - 优先显示本地选择的头像，然后是网络头像
                     if let avatarImage = avatarImage {
                         Image(uiImage: avatarImage)
@@ -163,15 +165,19 @@ struct ProfileView: View {
                 }
                 .padding(.horizontal)
 
-                // 生命日志入口
+                // 生命日志入口 - 包含历史记录
                 VStack(alignment: .leading) {
                     Text("生命日志").font(.headline).padding(.horizontal)
-                    HStack {
+                    HStack(spacing: 10) {
                         NavigationLink(destination: FootprintMapView()) {
                             StatCard(value: "足迹", name: "地图", icon: "map.fill", color: .green)
                         }
                         NavigationLink(destination: FirstsCollectionView()) {
                            StatCard(value: "我的", name: "第一次", icon: "rosette", color: .purple)
+                        }
+                        // 新增：运动历史记录入口
+                        NavigationLink(destination: ActivityHistoryView()) {
+                           StatCard(value: "全部", name: "历史记录", icon: "list.bullet", color: .blue)
                         }
                     }
                 }.padding(.horizontal)

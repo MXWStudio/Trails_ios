@@ -6,15 +6,19 @@ struct Coordinate: Codable {
     let longitude: Double
 }
 
-// 对应 Supabase 'activities' 表的数据模型
-struct ActivityRecord: Codable {
-    // 我们让 Supabase 自动生成 id，所以在 Swift 中设为可选
-    var id: UUID? = nil
+struct ActivityRecord: Codable, Identifiable { // 新增 Identifiable
+    // id 现在不再是可选的，因为我们需要它来唯一标识列表中的每一行
+    var id: UUID = UUID() 
     let user_id: UUID
     let activity_type: String
     let distance_meters: Double
     let duration_seconds: Int
     let calories_burned: Double
-    let route: [Coordinate] // 存储运动轨迹
-    // created_at 会由数据库自动生成
+    let route: [Coordinate]
+    var created_at: Date? = nil // 让 Swift 可以解码数据库的时间戳
+    
+    // Supabase 的表中列名是下划线，我们需要 CodingKey 来转换
+    enum CodingKeys: String, CodingKey {
+        case id, user_id, activity_type, distance_meters, duration_seconds, calories_burned, route, created_at
+    }
 }
