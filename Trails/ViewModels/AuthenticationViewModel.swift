@@ -136,6 +136,7 @@ class AuthenticationViewModel: ObservableObject {
     // 登录成功后的统一处理
     private func onLoginSuccess() {
         self.isUserAuthenticated = true
+        print("✅ 用户登录成功，准备获取/创建个人资料...")
         NotificationCenter.default.post(name: .userDidAuthenticate, object: nil)
     }
     

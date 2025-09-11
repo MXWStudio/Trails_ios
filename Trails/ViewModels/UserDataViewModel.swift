@@ -30,7 +30,7 @@ class UserDataViewModel: ObservableObject {
             queue: .main
         ) { _ in
             Task {
-                await self.smartFetchUserProfile()
+                await self.handleUserLogin()
             }
         }
         
@@ -193,6 +193,47 @@ extension UserDataViewModel {
         }
     }
     
+    /// 处理用户登录后的个人资料管理
+    func handleUserLogin() async {
+        print("🔐 处理用户登录后的个人资料管理...")
+        
+        guard let currentUserID = try? await SupabaseManager.shared.client.auth.session.user.id else {
+            print("❌ 无法获取用户ID，跳过个人资料管理")
+            return
+        }
+        
+        print("👤 当前用户ID: \(currentUserID)")
+        
+        // 1. 先尝试从云端获取现有资料
+        do {
+            let profile: UserData = try await SupabaseManager.shared.client
+                .from("profiles")
+                .select()
+                .eq("id", value: currentUserID)
+                .single()
+                .execute()
+                .value
+                
+            // 成功获取到资料
+            await MainActor.run {
+                self.user = profile
+                self.isDataFromCache = false
+                self.isLoadingUserData = false
+            }
+            
+            // 保存到本地缓存
+            saveUserDataToCache()
+            print("✅ 成功从云端获取用户个人资料")
+            
+        } catch {
+            print("⚠️ 云端没有找到用户资料，准备创建新资料...")
+            print("🔍 错误详情: \(error.localizedDescription)")
+            
+            // 2. 云端没有资料，创建新的个人资料
+            await createNewUserProfile(userID: currentUserID)
+        }
+    }
+    
     /// 检查是否需要同步数据
     func syncDataIfNeeded() async {
         // 检查是否有待同步的更改
@@ -287,28 +328,12 @@ extension UserDataViewModel {
         let existingCoins = cachedUser?.coins ?? 50
         let existingStreakDays = cachedUser?.streakDays ?? 0
         
-        let newUser = UserData(
-            id: userID,
-            name: existingName,
-            avatarURL: nil,
-            age: nil,
-            heightCM: nil,
-            customTitle: nil,
-            totalXP: existingXP,
-            joinYear: Calendar.current.component(.year, from: Date()),
-            followers: 0,
-            following: 0,
-            streakDays: existingStreakDays,
-            league: "青铜",
-            coins: existingCoins,
-            weightKG: 70.0,
-            preferredIntensity: .moderate,
-            favoriteActivities: [],
-            firsts: [],
-            team: nil,
-            companion: CompanionIP(),
-            ownedDecorations: []
-        )
+        // 使用新的初始化方法创建用户
+        var newUser = UserData(id: userID)
+        newUser.name = existingName
+        newUser.totalXP = existingXP
+        newUser.coins = existingCoins
+        newUser.streakDays = existingStreakDays
         
         // 先设置本地数据，确保用户有可用的数据
         self.user = newUser
@@ -329,7 +354,7 @@ extension UserDataViewModel {
             if error.localizedDescription.contains("age") || 
                error.localizedDescription.contains("column") ||
                error.localizedDescription.contains("height_cm") {
-                print("🗃️ 数据库表结构不完整，请执行 database_update.sql 脚本")
+                print("🗃️ 数据库表结构不完整，请执行 profiles_table_complete.sql 脚本")
                 print("💡 当前使用本地存储，功能不受影响")
             }
             
@@ -342,28 +367,56 @@ extension UserDataViewModel {
         }
     }
     
-    // 之前实现的头像上传和资料更新方法，与你的新逻辑结合
-    func updateProfileWithAvatar(name: String, age: Int?, customTitle: String?, height: Double?, weight: Double, newAvatar: UIImage?) async throws {
-        guard var userToUpdate = self.user else { return }
-        
-        // 如果有新头像，先上传
-        if let newAvatar = newAvatar {
-            let avatarUrl = try await SupabaseManager.shared.uploadAvatar(userId: userToUpdate.id, image: newAvatar)
-            userToUpdate.avatarURL = avatarUrl
+    // 更新个人资料信息（包含头像上传）
+    func updatePersonalInfo(
+        name: String? = nil,
+        age: Int? = nil,
+        heightCM: Double? = nil,
+        weightKG: Double? = nil,
+        customTitle: String? = nil,
+        favoriteActivities: [ActivityType]? = nil,
+        newAvatar: UIImage? = nil
+    ) async {
+        guard var userToUpdate = self.user else {
+            print("❌ 无法更新个人资料：用户数据为空")
+            return
         }
         
-        // 更新其他信息
-        userToUpdate.name = name
-        userToUpdate.age = age
-        userToUpdate.customTitle = customTitle
-        userToUpdate.heightCM = height
-        userToUpdate.weightKG = weight
+        print("📝 开始更新个人资料...")
         
-        // 将更新后的整个 user 对象写回 Supabase
-        try await SupabaseManager.shared.client.from("profiles").update(userToUpdate).eq("id", value: userToUpdate.id).execute()
+        // 更新基本信息
+        if let name = name { userToUpdate.name = name }
+        if let age = age { userToUpdate.age = age }
+        if let heightCM = heightCM { userToUpdate.heightCM = heightCM }
+        if let weightKG = weightKG { userToUpdate.weightKG = weightKG }
+        if let customTitle = customTitle { userToUpdate.customTitle = customTitle }
+        if let favoriteActivities = favoriteActivities { userToUpdate.favoriteActivities = favoriteActivities }
         
-        // 更新本地 @Published 属性，触发UI刷新
+        // 如果有新头像，先上传到云端
+        if let newAvatar = newAvatar {
+            do {
+                let avatarURL = try await SupabaseManager.shared.uploadAvatar(
+                    userId: userToUpdate.id, 
+                    image: newAvatar
+                )
+                userToUpdate.avatarURL = avatarURL
+                print("✅ 头像已上传到云端: \(avatarURL)")
+            } catch {
+                print("❌ 头像上传失败: \(error.localizedDescription)")
+                // 即使头像上传失败，也继续保存其他数据
+            }
+        }
+        
+        // 更新本地数据
         self.user = userToUpdate
+        
+        // 保存到本地缓存
+        saveUserDataToCache()
+        
+        // 异步同步到云端
+        await updateUserProfile()
+        
+        print("✅ 个人资料更新完成")
     }
     
     // 更新此方法以调用新的保存逻辑

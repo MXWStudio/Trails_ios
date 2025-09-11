@@ -4,33 +4,29 @@ import Foundation
 struct UserData: Codable, Identifiable {
     // 将 id 改为 UUID 类型，并设为数据库的主键
     var id: UUID
-    var name: String = "伟子哥"
+    var name: String = "新用户"
     var avatarURL: String? = nil // 头像URL，可选
     var age: Int? = nil // 年龄，可选
     var heightCM: Double? = nil // 身高（厘米），可选
     var customTitle: String? = nil // 自定义称号，可选
-    var totalXP: Int = 31946
-    var joinYear: Int = 2025
-    var followers: Int = 12
-    var following: Int = 16
-    var streakDays: Int = 256
-    var league: String = "红宝石"
-    var coins: Int = 150
+    var totalXP: Int = 0
+    var joinYear: Int = Calendar.current.component(.year, from: Date())
+    var followers: Int = 0
+    var following: Int = 0
+    var streakDays: Int = 0
+    var league: String = "青铜"
+    var coins: Int = 50
     var weightKG: Double = 70.0
     var preferredIntensity: Intensity = .moderate
-    var favoriteActivities: [ActivityType] = [.cycling, .hiking, .running, .badminton]
-    var firsts: [UserFirstRecord] = [
-        UserFirstRecord(title: "第一次使用 Trails", date: "2025-08-20", icon: "sparkles"),
-        UserFirstRecord(title: "第一次完成5公里", date: "2025-08-22", icon: "figure.run")
-    ]
-    var team: Team? = Team(name: "冒险者小队", members: ["伟子哥", "用户A", "用户B"], weeklyProgress: 3, weeklyGoal: 5)
+    var favoriteActivities: [ActivityType] = []
+    var firsts: [UserFirstRecord] = []
+    var team: Team? = nil
     var companion: CompanionIP = CompanionIP()
-    var ownedDecorations: [DecorationItem] = [
-        DecorationItem(name: "小花", imageName: "flower.fill"),
-        DecorationItem(name: "宝石", imageName: "gem.fill"),
-        DecorationItem(name: "星星", imageName: "star.fill"),
-        DecorationItem(name: "奖杯", imageName: "trophy.fill")
-    ]
+    var ownedDecorations: [DecorationItem] = []
+    
+    // 时间戳字段（从数据库读取，但不用于创建）
+    var createdAt: Date?
+    var updatedAt: Date?
     
     // Supabase 的表中列名通常是下划线风格，我们需要一个 CodingKey 来做转换
     enum CodingKeys: String, CodingKey {
@@ -45,6 +41,79 @@ struct UserData: Codable, Identifiable {
         case preferredIntensity = "preferred_intensity"
         case favoriteActivities = "favorite_activities"
         case ownedDecorations = "owned_decorations"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+    
+    // 初始化方法，用于创建新用户
+    init(id: UUID) {
+        self.id = id
+        self.name = "新用户"
+        self.totalXP = 0
+        self.joinYear = Calendar.current.component(.year, from: Date())
+        self.followers = 0
+        self.following = 0
+        self.streakDays = 0
+        self.league = "青铜"
+        self.coins = 50
+        self.weightKG = 70.0
+        self.preferredIntensity = .moderate
+        self.favoriteActivities = []
+        self.firsts = []
+        self.team = nil
+        self.companion = CompanionIP()
+        self.ownedDecorations = []
+        self.createdAt = nil
+        self.updatedAt = nil
+    }
+    
+    // 完整的初始化方法，用于从数据库加载
+    init(
+        id: UUID,
+        name: String = "新用户",
+        avatarURL: String? = nil,
+        age: Int? = nil,
+        heightCM: Double? = nil,
+        customTitle: String? = nil,
+        totalXP: Int = 0,
+        joinYear: Int = Calendar.current.component(.year, from: Date()),
+        followers: Int = 0,
+        following: Int = 0,
+        streakDays: Int = 0,
+        league: String = "青铜",
+        coins: Int = 50,
+        weightKG: Double = 70.0,
+        preferredIntensity: Intensity = .moderate,
+        favoriteActivities: [ActivityType] = [],
+        firsts: [UserFirstRecord] = [],
+        team: Team? = nil,
+        companion: CompanionIP = CompanionIP(),
+        ownedDecorations: [DecorationItem] = [],
+        createdAt: Date? = nil,
+        updatedAt: Date? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.avatarURL = avatarURL
+        self.age = age
+        self.heightCM = heightCM
+        self.customTitle = customTitle
+        self.totalXP = totalXP
+        self.joinYear = joinYear
+        self.followers = followers
+        self.following = following
+        self.streakDays = streakDays
+        self.league = league
+        self.coins = coins
+        self.weightKG = weightKG
+        self.preferredIntensity = preferredIntensity
+        self.favoriteActivities = favoriteActivities
+        self.firsts = firsts
+        self.team = team
+        self.companion = companion
+        self.ownedDecorations = ownedDecorations
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
     }
 }
 
