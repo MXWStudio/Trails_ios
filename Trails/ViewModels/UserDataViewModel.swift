@@ -375,6 +375,7 @@ extension UserDataViewModel {
         weightKG: Double? = nil,
         customTitle: String? = nil,
         favoriteActivities: [ActivityType]? = nil,
+        preferredIntensity: Intensity? = nil,
         newAvatar: UIImage? = nil
     ) async {
         guard var userToUpdate = self.user else {
@@ -391,6 +392,7 @@ extension UserDataViewModel {
         if let weightKG = weightKG { userToUpdate.weightKG = weightKG }
         if let customTitle = customTitle { userToUpdate.customTitle = customTitle }
         if let favoriteActivities = favoriteActivities { userToUpdate.favoriteActivities = favoriteActivities }
+        if let preferredIntensity = preferredIntensity { userToUpdate.preferredIntensity = preferredIntensity }
         
         // 如果有新头像，先上传到云端
         if let newAvatar = newAvatar {

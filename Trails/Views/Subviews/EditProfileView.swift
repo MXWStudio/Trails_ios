@@ -10,7 +10,6 @@ struct EditProfileView: View {
     // 头像更新回调
     var onAvatarUpdated: ((UIImage?) -> Void)?
     
-    @State private var selectedActivities: Set<ActivityType> = []
     
     // 个人信息编辑状态
     @State private var editedName: String = ""
@@ -114,40 +113,7 @@ struct EditProfileView: View {
                     }
                 }
                 
-                Section(header: Text("我的运动 (最多选择4项)")) {
-                    ForEach(ActivityType.allCases) { activity in
-                        Button(action: {
-                            if selectedActivities.contains(activity) {
-                                selectedActivities.remove(activity)
-                            } else {
-                                if selectedActivities.count < 4 {
-                                    selectedActivities.insert(activity)
-                                }
-                            }
-                        }) {
-                            HStack {
-                                Text(activity.rawValue)
-                                Spacer()
-                                if selectedActivities.contains(activity) {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                        }
-                        .foregroundColor(.primary)
-                    }
-                }
                 
-                // 新增：账户操作 Section
-                Section {
-                    Button("退出登录") {
-                        Task {
-                            // 调用认证管理器中的退出方法
-                            await authViewModel.signOut()
-                        }
-                    }
-                    .foregroundColor(.red) // 使用红色以示警告
-                }
             }
             .navigationTitle("编辑个人资料")
             .onAppear {
@@ -180,7 +146,6 @@ struct EditProfileView: View {
         editedHeight = user.heightCM != nil ? String(user.heightCM!) : ""
         editedWeight = String(user.weightKG)
         editedCustomTitle = user.customTitle ?? ""
-        selectedActivities = Set(user.favoriteActivities)
         
         // 如果用户有头像URL，尝试加载头像
         if let avatarURL = user.avatarURL, !avatarURL.isEmpty {
@@ -199,7 +164,6 @@ struct EditProfileView: View {
             let heightCM = Double(editedHeight)
             let weightKG = Double(editedWeight) ?? userDataVM.user?.weightKG ?? 70.0
             let customTitle = editedCustomTitle.isEmpty ? nil : editedCustomTitle
-            let favoriteActivities = ActivityType.allCases.filter { selectedActivities.contains($0) }
             
             // 使用新的个人资料更新方法
             await userDataVM.updatePersonalInfo(
@@ -208,7 +172,7 @@ struct EditProfileView: View {
                 heightCM: heightCM,
                 weightKG: weightKG,
                 customTitle: customTitle,
-                favoriteActivities: favoriteActivities,
+                favoriteActivities: userDataVM.user?.favoriteActivities ?? [],
                 newAvatar: avatarImage
             )
             

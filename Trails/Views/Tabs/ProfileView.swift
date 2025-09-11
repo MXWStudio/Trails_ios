@@ -6,6 +6,7 @@ struct ProfileView: View {
     @EnvironmentObject var authViewModel: AuthenticationViewModel
     
     @State private var isEditingProfile = false
+    @State private var showSettings = false
     @State private var showLogoutAlert = false
     @State private var avatarImage: UIImage? = nil
     
@@ -24,6 +25,23 @@ struct ProfileView: View {
             }
             .navigationTitle("个人")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(
+                trailing: HStack(spacing: 16) {
+                    // 编辑个人资料按钮
+                    Button(action: { isEditingProfile = true }) {
+                        Image(systemName: "pencil")
+                            .font(.title3)
+                            .foregroundColor(.blue)
+                    }
+                    
+                    // 设置按钮
+                    Button(action: { showSettings = true }) {
+                        Image(systemName: "gearshape")
+                            .font(.title3)
+                            .foregroundColor(.blue)
+                    }
+                }
+            )
         }
         .onAppear {
             // 确保数据加载不会阻塞 UI
@@ -262,8 +280,8 @@ struct ProfileView: View {
 
                 // 设置选项
                 VStack(spacing: 10) {
-                    // 个人数据编辑按钮
-                    Button("编辑个人资料") { isEditingProfile = true }
+                    // 设置入口按钮
+                    Button("设置") { showSettings = true }
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
@@ -283,15 +301,6 @@ struct ProfileView: View {
                         .cornerRadius(12)
                         .padding(.horizontal)
                     }
-                    
-                    // 登出按钮
-                    Button("退出登录") { showLogoutAlert = true }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red.opacity(0.1))
-                        .foregroundColor(.red)
-                        .cornerRadius(12)
-                        .padding(.horizontal)
                 }
                 
                 // 底部间距，避免与导航栏重叠
@@ -304,6 +313,11 @@ struct ProfileView: View {
             })
                 .environmentObject(userDataVM)
                 // 修改：将 authViewModel 也传递给编辑页面
+                .environmentObject(authViewModel)
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+                .environmentObject(userDataVM)
                 .environmentObject(authViewModel)
         }
         .alert("确认退出", isPresented: $showLogoutAlert) {
