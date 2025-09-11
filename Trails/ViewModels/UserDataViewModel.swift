@@ -216,7 +216,10 @@ extension UserDataViewModel {
             return
         }
         
-        self.isLoadingUserData = true
+        // 确保 UI 更新在主线程上执行
+        await MainActor.run {
+            self.isLoadingUserData = true
+        }
         print("📥 开始从 Supabase 获取用户资料...")
         
         do {
@@ -228,8 +231,12 @@ extension UserDataViewModel {
                 .execute()
                 .value
                 
-            self.user = profile
-            self.isDataFromCache = false
+            // 确保 UI 更新在主线程上执行
+            await MainActor.run {
+                self.user = profile
+                self.isDataFromCache = false
+                self.isLoadingUserData = false
+            }
             
             // 保存到本地缓存
             saveUserDataToCache()
@@ -241,6 +248,11 @@ extension UserDataViewModel {
             
         } catch {
             print("❌ 获取用户资料失败: \(error)")
+            
+            // 确保 UI 更新在主线程上执行
+            await MainActor.run {
+                self.isLoadingUserData = false
+            }
             print("🔍 错误详情: \(error.localizedDescription)")
             
             // 保护现有的本地数据，只在没有本地数据时才创建新资料

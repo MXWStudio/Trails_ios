@@ -25,6 +25,12 @@ struct ProfileView: View {
             .navigationTitle("个人")
             .navigationBarTitleDisplayMode(.inline)
         }
+        .onAppear {
+            // 确保数据加载不会阻塞 UI
+            Task {
+                await userDataVM.smartFetchUserProfile()
+            }
+        }
     }
     
     private var refreshableContent: some View {
